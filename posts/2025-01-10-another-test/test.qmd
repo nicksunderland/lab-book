@@ -1,0 +1,10 @@
+---
+title: "Test"
+author: "Nick Sunderland"
+date: "2025-01-10"
+---
+
+## Motivation
+```{r}
+cars
+```
