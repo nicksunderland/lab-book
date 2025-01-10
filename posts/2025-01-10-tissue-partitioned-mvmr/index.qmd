@@ -29,7 +29,7 @@ plot <- ggplot(mtcars, aes(wt, mpg)) +
   ggtitle("Heavy Plot Example")
 
 # Save the plot locally
-ggsave("heavy_plot.png", plot, width = 6, height = 4)
+plot
 
 # bmi <- readRDS(file.path(dir, "tmp_objects", "obj_bmi.RDS"))
 # bmi
