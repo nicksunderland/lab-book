@@ -1,0 +1,16 @@
+---
+listing:
+  contents: posts
+  sort: "date desc"
+  type: table
+  table-striped: true
+  table-hover: true
+  fields: [date, title, categories]
+  # date-format: "iso"
+  categories: false
+  sort-ui: false
+  filter-ui: true
+  page-size: 100
+page-layout: full
+title-block-banner: true
+---

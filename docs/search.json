@@ -1,0 +1,30 @@
+[
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "Miscellaneous code and dynamic documents."
+  },
+  {
+    "objectID": "posts/2025-01-10-tissue-partitioned-mvmr/index.html",
+    "href": "posts/2025-01-10-tissue-partitioned-mvmr/index.html",
+    "title": "Tissue-partitioned BMI instrument procedure",
+    "section": "",
+    "text": "What does the weighting by PPH4 do to tissue partitioned BMI instruments?\n\nlibrary(data.table)\nlibrary(ggplot2)"
+  },
+  {
+    "objectID": "posts/2025-01-10-tissue-partitioned-mvmr/index.html#motivation",
+    "href": "posts/2025-01-10-tissue-partitioned-mvmr/index.html#motivation",
+    "title": "Tissue-partitioned BMI instrument procedure",
+    "section": "",
+    "text": "What does the weighting by PPH4 do to tissue partitioned BMI instruments?\n\nlibrary(data.table)\nlibrary(ggplot2)"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Nick Sunderland's lab book",
+    "section": "",
+    "text": "Date\n\n\nTitle\n\n\nCategories\n\n\n\n\n\n\nJan 10, 2025\n\n\nTissue-partitioned BMI instrument procedure\n\n\n \n\n\n\n\n\nNo matching items"
+  }
+]
