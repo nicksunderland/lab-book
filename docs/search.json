@@ -25,7 +25,7 @@
     "href": "posts/2025-01-10-tissue-partitioned-mvmr/index.html#bmi-data",
     "title": "Tissue-partitioned BMI instrument procedure",
     "section": "BMI data",
-    "text": "BMI data\nFirst load the BMI GWAS.\n\nplot &lt;- ggplot(mtcars, aes(wt, mpg)) + \n  geom_point() +\n  ggtitle(\"Heavy Plot Example\")\n\n# Save the plot locally\nplot\n\n\n\n\n\n\n\n# bmi &lt;- readRDS(file.path(dir, \"tmp_objects\", \"obj_bmi.RDS\"))\n# bmi"
+    "text": "BMI data\nFirst load the BMI GWAS.\n\nbmi &lt;- readRDS(file.path(TPMR_DIR, \"output\", \"tmp_objects\", \"obj_bmi.RDS\"))\nbmi\n\ngenepi.utils::GWAS object\n- trait: bmi \n- id: combined_bmi_giant_ukb_annot.txt \n# A tibble: 6 × 26\n  rsid  chr       bp ea    oa      eaf     beta      se     p      n ncase trait\n  &lt;chr&gt; &lt;chr&gt;  &lt;int&gt; &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;int&gt; &lt;chr&gt;\n1 rs10… 1     2.27e8 T     G     0.833  0.00380 0.00263  0.15 463005    NA bmi  \n2 rs10… 1     1.63e8 T     C     0.855  0.0027  0.0024   0.26 690227    NA bmi  \n3 rs10… 1     2.22e8 C     T     0.653  0.00124 0.00206  0.55 463005    NA bmi  \n4 rs10… 1     1.57e8 A     G     0.394  0.0007  0.0018   0.7  688612    NA bmi  \n5 rs10… 1     9.52e7 T     C     0.352 -0.0011  0.0018   0.54 686026    NA bmi  \n6 rs10… 1     6.69e7 C     G     0.217  0.0034  0.0021   0.1  685310    NA bmi  \n# ℹ 14 more variables: id &lt;chr&gt;, strand &lt;chr&gt;, imputed &lt;lgl&gt;, info &lt;dbl&gt;,\n#   q &lt;dbl&gt;, q_p &lt;dbl&gt;, i2 &lt;dbl&gt;, proxy_rsid &lt;chr&gt;, proxy_chr &lt;chr&gt;,\n#   proxy_bp &lt;int&gt;, proxy_ea &lt;chr&gt;, proxy_oa &lt;chr&gt;, proxy_eaf &lt;dbl&gt;,\n#   proxy_r2 &lt;dbl&gt;"
   },
   {
     "objectID": "index.html",

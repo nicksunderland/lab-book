@@ -197,21 +197,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="bmi-data">BMI data</h2>
 <p>First load the BMI GWAS.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(mtcars, <span class="fu">aes</span>(wt, mpg)) <span class="sc">+</span> </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"Heavy Plot Example"</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the plot locally</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>plot</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>bmi <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">file.path</span>(TPMR_DIR, <span class="st">"output"</span>, <span class="st">"tmp_objects"</span>, <span class="st">"obj_bmi.RDS"</span>))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>bmi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>genepi.utils::GWAS object
+- trait: bmi 
+- id: combined_bmi_giant_ukb_annot.txt 
+# A tibble: 6 × 26
+  rsid  chr       bp ea    oa      eaf     beta      se     p      n ncase trait
+  &lt;chr&gt; &lt;chr&gt;  &lt;int&gt; &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;int&gt; &lt;chr&gt;
+1 rs10… 1     2.27e8 T     G     0.833  0.00380 0.00263  0.15 463005    NA bmi  
+2 rs10… 1     1.63e8 T     C     0.855  0.0027  0.0024   0.26 690227    NA bmi  
+3 rs10… 1     2.22e8 C     T     0.653  0.00124 0.00206  0.55 463005    NA bmi  
+4 rs10… 1     1.57e8 A     G     0.394  0.0007  0.0018   0.7  688612    NA bmi  
+5 rs10… 1     9.52e7 T     C     0.352 -0.0011  0.0018   0.54 686026    NA bmi  
+6 rs10… 1     6.69e7 C     G     0.217  0.0034  0.0021   0.1  685310    NA bmi  
+# ℹ 14 more variables: id &lt;chr&gt;, strand &lt;chr&gt;, imputed &lt;lgl&gt;, info &lt;dbl&gt;,
+#   q &lt;dbl&gt;, q_p &lt;dbl&gt;, i2 &lt;dbl&gt;, proxy_rsid &lt;chr&gt;, proxy_chr &lt;chr&gt;,
+#   proxy_bp &lt;int&gt;, proxy_ea &lt;chr&gt;, proxy_oa &lt;chr&gt;, proxy_eaf &lt;dbl&gt;,
+#   proxy_r2 &lt;dbl&gt;</code></pre>
 </div>
-</div>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># bmi &lt;- readRDS(file.path(dir, "tmp_objects", "obj_bmi.RDS"))</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># bmi</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <!-- ## Heart failure data -->
 <!-- Load the heart failure GWAS. -->

@@ -24,15 +24,8 @@ First load the BMI GWAS.
 #| message: false
 #| eval: true
 
-plot <- ggplot(mtcars, aes(wt, mpg)) + 
-  geom_point() +
-  ggtitle("Heavy Plot Example")
-
-# Save the plot locally
-plot
-
-# bmi <- readRDS(file.path(dir, "tmp_objects", "obj_bmi.RDS"))
-# bmi
+bmi <- readRDS(file.path(TPMR_DIR, "output", "tmp_objects", "obj_bmi.RDS"))
+bmi
 ```
 
 <!-- ## Heart failure data -->
