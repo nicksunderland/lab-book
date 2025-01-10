@@ -186,27 +186,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="motivation" class="level2">
 <h2 class="anchored" data-anchor-id="motivation">Motivation</h2>
-<p>What does the weighting by PPH4 do to tissue partitioned BMI instruments?</p>
+<p>What does the weighting by PPH4 do to tissue partitioned BMI instruments? Let’s simulate some tissue partitioned BMI MR results.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(genepi.utils)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<!-- ```{r setup, include=FALSE} -->
-<!-- knitr::opts_chunk$set(echo = TRUE) -->
-<!-- library(data.table) -->
-<!-- library(genepi.utils) -->
-<!-- library(ggplot2) -->
-<!-- dir <- "/Users/xx20081/Desktop/hf_tissue_partitioned_bmi/output" -->
-<!-- plink_ref <- "/Users/xx20081/Documents/local_data/genome_reference/ukb_reference_genome/uk10k" -->
-<!-- ``` -->
-<!-- ## Simulated tissue partitioned MR -->
-<!-- Let's simulate some tissue partitioned BMI MR results.   -->
-<!-- ## BMI data -->
-<!-- First load the BMI GWAS. -->
-<!-- ```{r, message=FALSE, eval=F} -->
-<!-- bmi <- readRDS(file.path(dir, "tmp_objects", "obj_bmi.RDS")) -->
-<!-- bmi -->
-<!-- ``` -->
+</section>
+<section id="bmi-data" class="level2">
+<h2 class="anchored" data-anchor-id="bmi-data">BMI data</h2>
+<p>First load the BMI GWAS.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(mtcars, <span class="fu">aes</span>(wt, mpg)) <span class="sc">+</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"Heavy Plot Example"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the plot locally</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"heavy_plot.png"</span>, plot, <span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">4</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># bmi &lt;- readRDS(file.path(dir, "tmp_objects", "obj_bmi.RDS"))</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># bmi</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <!-- ## Heart failure data -->
 <!-- Load the heart failure GWAS. -->
 <!-- ```{r, message=FALSE, eval=F} -->
@@ -249,7 +249,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- min_pph4 <- 0.8 -->
 <!-- weighted <- lapply(1:20, function(dist_shape) { -->
 <!--   d <- copy(dat[selected==TRUE]) -->
-<!--   d[, `:=`(pph4  = min_pph4 + (1.0 - min_pph4) * rbeta(.N, shape1 = 5, shape2 = dist_shape),  -->
+<!--   d[, `:=`(pph4  = min_pph4 + (1.0 - min_pph4) * rbeta(.N, shape1 = 5, shape2 = dist_shape), -->
 <!--            shape = dist_shape)] -->
 <!-- }) |> rbindlist() -->
 <!-- weighted[, mean_pph4 := round(mean(pph4),3), by=.(shape)] -->
@@ -284,8 +284,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!--   guides(color = "none") -->
 <!-- p -->
 <!-- ``` -->
-<!-- ## Interpretation  -->
-<!-- Lower colocalisation evidence (lower PPH4) for any given instrument set leads to increasing MR estimate for the effect of BMI on an outcome due to greater down weighting of the BMI betas and consequent increase in the regression slope.  -->
+<!-- ## Interpretation -->
+<!-- Lower colocalisation evidence (lower PPH4) for any given instrument set leads to increasing MR estimate for the effect of BMI on an outcome due to greater down weighting of the BMI betas and consequent increase in the regression slope. -->
 
 
 </section>

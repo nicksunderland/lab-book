@@ -2,41 +2,38 @@
 title: "Tissue-partitioned BMI instrument procedure"
 author: "Nick Sunderland"
 date: "2025-01-10"
+execute:
+  fig-path: "posts/2025-01-10-tissue-partitioned-mvmr/" 
 ---
 
 ## Motivation
-What does the weighting by PPH4 do to tissue partitioned BMI instruments?
+What does the weighting by PPH4 do to tissue partitioned BMI instruments? Let's simulate some tissue partitioned BMI MR results.
 
 ```{r load-packages}
 #| warning: false
 library(data.table)
 library(ggplot2)
+library(genepi.utils)
 ```
+
+
+## BMI data
+First load the BMI GWAS.
 
 ```{r}
+#| message: false
+#| eval: true
+
+plot <- ggplot(mtcars, aes(wt, mpg)) + 
+  geom_point() +
+  ggtitle("Heavy Plot Example")
+
+# Save the plot locally
+ggsave("heavy_plot.png", plot, width = 6, height = 4)
+
+# bmi <- readRDS(file.path(dir, "tmp_objects", "obj_bmi.RDS"))
+# bmi
 ```
-
-
-<!-- ```{r setup, include=FALSE} -->
-<!-- knitr::opts_chunk$set(echo = TRUE) -->
-<!-- library(data.table) -->
-<!-- library(genepi.utils) -->
-<!-- library(ggplot2) -->
-<!-- dir <- "/Users/xx20081/Desktop/hf_tissue_partitioned_bmi/output" -->
-<!-- plink_ref <- "/Users/xx20081/Documents/local_data/genome_reference/ukb_reference_genome/uk10k" -->
-<!-- ``` -->
-
-<!-- ## Simulated tissue partitioned MR -->
-<!-- Let's simulate some tissue partitioned BMI MR results.   -->
-
-
-<!-- ## BMI data -->
-<!-- First load the BMI GWAS. -->
-
-<!-- ```{r, message=FALSE, eval=F} -->
-<!-- bmi <- readRDS(file.path(dir, "tmp_objects", "obj_bmi.RDS")) -->
-<!-- bmi -->
-<!-- ``` -->
 
 <!-- ## Heart failure data -->
 <!-- Load the heart failure GWAS. -->
@@ -86,7 +83,7 @@ library(ggplot2)
 <!-- min_pph4 <- 0.8 -->
 <!-- weighted <- lapply(1:20, function(dist_shape) { -->
 <!--   d <- copy(dat[selected==TRUE]) -->
-<!--   d[, `:=`(pph4  = min_pph4 + (1.0 - min_pph4) * rbeta(.N, shape1 = 5, shape2 = dist_shape),  -->
+<!--   d[, `:=`(pph4  = min_pph4 + (1.0 - min_pph4) * rbeta(.N, shape1 = 5, shape2 = dist_shape), -->
 <!--            shape = dist_shape)] -->
 <!-- }) |> rbindlist() -->
 <!-- weighted[, mean_pph4 := round(mean(pph4),3), by=.(shape)] -->
@@ -128,5 +125,5 @@ library(ggplot2)
 <!-- p -->
 <!-- ``` -->
 
-<!-- ## Interpretation  -->
-<!-- Lower colocalisation evidence (lower PPH4) for any given instrument set leads to increasing MR estimate for the effect of BMI on an outcome due to greater down weighting of the BMI betas and consequent increase in the regression slope.  -->
+<!-- ## Interpretation -->
+<!-- Lower colocalisation evidence (lower PPH4) for any given instrument set leads to increasing MR estimate for the effect of BMI on an outcome due to greater down weighting of the BMI betas and consequent increase in the regression slope. -->

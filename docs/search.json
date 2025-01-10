@@ -7,38 +7,31 @@
     "text": "Miscellaneous code and dynamic documents."
   },
   {
-    "objectID": "posts/2025-01-10-another-test/test.html",
-    "href": "posts/2025-01-10-another-test/test.html",
-    "title": "Test",
-    "section": "",
-    "text": "cars\n\n   speed dist\n1      4    2\n2      4   10\n3      7    4\n4      7   22\n5      8   16\n6      9   10\n7     10   18\n8     10   26\n9     10   34\n10    11   17\n11    11   28\n12    12   14\n13    12   20\n14    12   24\n15    12   28\n16    13   26\n17    13   34\n18    13   34\n19    13   46\n20    14   26\n21    14   36\n22    14   60\n23    14   80\n24    15   20\n25    15   26\n26    15   54\n27    16   32\n28    16   40\n29    17   32\n30    17   40\n31    17   50\n32    18   42\n33    18   56\n34    18   76\n35    18   84\n36    19   36\n37    19   46\n38    19   68\n39    20   32\n40    20   48\n41    20   52\n42    20   56\n43    20   64\n44    22   66\n45    23   54\n46    24   70\n47    24   92\n48    24   93\n49    24  120\n50    25   85"
-  },
-  {
-    "objectID": "posts/2025-01-10-another-test/test.html#motivation",
-    "href": "posts/2025-01-10-another-test/test.html#motivation",
-    "title": "Test",
-    "section": "",
-    "text": "cars\n\n   speed dist\n1      4    2\n2      4   10\n3      7    4\n4      7   22\n5      8   16\n6      9   10\n7     10   18\n8     10   26\n9     10   34\n10    11   17\n11    11   28\n12    12   14\n13    12   20\n14    12   24\n15    12   28\n16    13   26\n17    13   34\n18    13   34\n19    13   46\n20    14   26\n21    14   36\n22    14   60\n23    14   80\n24    15   20\n25    15   26\n26    15   54\n27    16   32\n28    16   40\n29    17   32\n30    17   40\n31    17   50\n32    18   42\n33    18   56\n34    18   76\n35    18   84\n36    19   36\n37    19   46\n38    19   68\n39    20   32\n40    20   48\n41    20   52\n42    20   56\n43    20   64\n44    22   66\n45    23   54\n46    24   70\n47    24   92\n48    24   93\n49    24  120\n50    25   85"
-  },
-  {
     "objectID": "posts/2025-01-10-tissue-partitioned-mvmr/index.html",
     "href": "posts/2025-01-10-tissue-partitioned-mvmr/index.html",
     "title": "Tissue-partitioned BMI instrument procedure",
     "section": "",
-    "text": "What does the weighting by PPH4 do to tissue partitioned BMI instruments?\n\nlibrary(data.table)\nlibrary(ggplot2)"
+    "text": "What does the weighting by PPH4 do to tissue partitioned BMI instruments? Let’s simulate some tissue partitioned BMI MR results.\n\nlibrary(data.table)\nlibrary(ggplot2)\nlibrary(genepi.utils)"
   },
   {
     "objectID": "posts/2025-01-10-tissue-partitioned-mvmr/index.html#motivation",
     "href": "posts/2025-01-10-tissue-partitioned-mvmr/index.html#motivation",
     "title": "Tissue-partitioned BMI instrument procedure",
     "section": "",
-    "text": "What does the weighting by PPH4 do to tissue partitioned BMI instruments?\n\nlibrary(data.table)\nlibrary(ggplot2)"
+    "text": "What does the weighting by PPH4 do to tissue partitioned BMI instruments? Let’s simulate some tissue partitioned BMI MR results.\n\nlibrary(data.table)\nlibrary(ggplot2)\nlibrary(genepi.utils)"
+  },
+  {
+    "objectID": "posts/2025-01-10-tissue-partitioned-mvmr/index.html#bmi-data",
+    "href": "posts/2025-01-10-tissue-partitioned-mvmr/index.html#bmi-data",
+    "title": "Tissue-partitioned BMI instrument procedure",
+    "section": "BMI data",
+    "text": "BMI data\nFirst load the BMI GWAS.\n\nplot &lt;- ggplot(mtcars, aes(wt, mpg)) + \n  geom_point() +\n  ggtitle(\"Heavy Plot Example\")\n\n# Save the plot locally\nggsave(\"heavy_plot.png\", plot, width = 6, height = 4)\n\n# bmi &lt;- readRDS(file.path(dir, \"tmp_objects\", \"obj_bmi.RDS\"))\n# bmi"
   },
   {
     "objectID": "index.html",
     "href": "index.html",
     "title": "Nick Sunderland's lab book",
     "section": "",
-    "text": "Date\n\n\nTitle\n\n\nCategories\n\n\n\n\n\n\nJan 10, 2025\n\n\nTissue-partitioned BMI instrument procedure\n\n\n \n\n\n\n\nJan 10, 2025\n\n\nTest\n\n\n \n\n\n\n\n\nNo matching items"
+    "text": "Date\n\n\nTitle\n\n\nCategories\n\n\n\n\n\n\nJan 10, 2025\n\n\nTissue-partitioned BMI instrument procedure\n\n\n \n\n\n\n\n\nNo matching items"
   }
 ]
