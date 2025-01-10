@@ -11,9 +11,14 @@ What does the weighting by PPH4 do to tissue partitioned BMI instruments? Let's 
 
 ```{r load-packages}
 #| warning: false
+#| message: false
+
 library(data.table)
 library(ggplot2)
+library(ggpubr)
 library(genepi.utils)
+library(tibble)
+library(knitr)
 ```
 
 
@@ -22,101 +27,164 @@ First load the BMI GWAS.
 
 ```{r}
 #| message: false
-#| eval: true
 
-bmi <- readRDS(file.path(TPMR_DIR, "output", "tmp_objects", "obj_bmi.RDS"))
-bmi
+bmi    <- readRDS(file.path(TPMR_DIR, "output", "tmp_objects", "obj_bmi.RDS"))
+clumps <- clump(as.data.table(bmi), p1=5e-8, r2=0.001, kb=10000, plink2=PLINK2, plink_ref=UKBB_REFERENCE)[index==TRUE]
+bmi    <- subset_gwas(bmi, clumps$rsid)
+kable(head(clumps, 5), caption = "BMI lead variants")
 ```
 
-<!-- ## Heart failure data -->
-<!-- Load the heart failure GWAS. -->
+## Heart failure data
+Load the heart failure GWAS.
 
-<!-- ```{r, message=FALSE, eval=F} -->
-<!-- hf <- readRDS(file.path(dir, "tmp_objects", "obj_hf_allcause.RDS")) -->
-<!-- hf -->
-<!-- ``` -->
+```{r}
+#| message: false
 
-<!-- ## Harmonise the datasets -->
-<!-- ```{r, message=FALSE, eval=F} -->
-<!-- h   <- MR(bmi, hf) -->
-<!-- h   <- clump_mr(h, p1=5e-8, r2=0.001, kb=10000, plink_ref=plink_ref) -->
-<!-- dat <- as.data.table(h)[index_snp==TRUE] -->
-<!-- saveRDS(dat, "~/Desktop/tpmr_simulation.RDS") -->
-<!-- ``` -->
-<!-- ```{r, include=FALSE} -->
-<!-- dat <- readRDS("~/Desktop/tpmr_simulation.RDS") -->
-<!-- ``` -->
+hf <- readRDS(file.path(TPMR_DIR, "output", "tmp_objects", "obj_hf_allcause.RDS"))
+hf <- subset_gwas(hf, clumps$rsid)
+```
 
-<!-- ## Plot the variants -->
-<!-- ```{r, warning=FALSE, message=FALSE} -->
-<!-- p <- ggplot(dat, aes(x=bx, y=by, xmin=bx-bxse*1.96, xmax=bx+bxse*1.96, ymin=by-byse*1.96, ymax=by+byse*1.96)) + -->
-<!--   geom_errorbar(color="lightgrey") + -->
-<!--   geom_errorbarh(color="lightgray") + -->
-<!--   geom_point() + -->
-<!--   geom_smooth(method="lm", se=F) -->
-<!-- p -->
-<!-- ``` -->
+## Harmonise the datasets
+```{r}
+#| message: false
 
-<!-- ## Randomly select a proportion of the variants -->
-<!-- ```{r, warning=FALSE, message=FALSE} -->
-<!-- set.seed(123) -->
-<!-- proportion <- 0.2 -->
-<!-- dat[, selected := sample(c(TRUE, FALSE), .N, replace = TRUE, prob = c(proportion, 1 - proportion))] -->
+h <- MR(bmi, hf)
+kable(head(as.data.table(h),5), caption = "Harmonised BMI:HF dataset")
+```
 
-<!-- p <- ggplot(dat, aes(x=bx, y=by, xmin=bx-bxse*1.96, xmax=bx+bxse*1.96, ymin=by-byse*1.96, ymax=by+byse*1.96, color=selected)) + -->
-<!--   geom_errorbar(color="lightgrey") + -->
-<!--   geom_errorbarh(color="lightgray") + -->
-<!--   geom_point() + -->
-<!--   geom_smooth(method="lm", se=F) -->
-<!-- p -->
-<!-- ``` -->
+## Run the MR
+```{r}
+res <- run_mr(h)
+kable(res, caption = "BMI:HF Mendelian randomisation")
+```
 
-<!-- ## Create different distributions of PPH4 weights -->
-<!-- ```{r, warning=FALSE, message=FALSE} -->
-<!-- min_pph4 <- 0.8 -->
-<!-- weighted <- lapply(1:20, function(dist_shape) { -->
-<!--   d <- copy(dat[selected==TRUE]) -->
-<!--   d[, `:=`(pph4  = min_pph4 + (1.0 - min_pph4) * rbeta(.N, shape1 = 5, shape2 = dist_shape), -->
-<!--            shape = dist_shape)] -->
-<!-- }) |> rbindlist() -->
-<!-- weighted[, mean_pph4 := round(mean(pph4),3), by=.(shape)] -->
-<!-- weighted[, mean_pph4 := factor(mean_pph4, levels = unique(mean_pph4))] -->
+## Plot MR
+```{r, warning=FALSE, message=FALSE}
+plot_mr(h, res)
+```
 
-<!-- p <- ggplot(weighted, aes(x=pph4, fill=mean_pph4)) + -->
-<!--   geom_density(alpha=0.2) -->
-<!-- p -->
-<!-- ``` -->
+## Select variants
+In the Leyden et al. 2022 paper 86 variant colocalise with adipose tissue eQTLs and 140 colocalise with brain tissue eQTLs. There is overlap between the two tissues of 43 variants.
+```{r, warning=FALSE, message=FALSE}
+#| warning: false
+#| message: false
 
-<!-- ## Apply the weightings -->
-<!-- ```{r, warning=FALSE, message=FALSE} -->
-<!-- weighted[, bx_weighted := bx*pph4] -->
+set.seed(123)
+tissue1_varid <- sample(h@snps, 140)
+overlap_varid <- sample(tissue1_varid, 43)
+tissue2_varid <- c(overlap_varid, sample(h@snps[!h@snps %in% overlap_varid], 86-43))
 
-<!-- p <- ggplot(weighted, aes(x=bx_weighted, y=by, xmin=bx-bxse*1.96, xmax=bx+bxse*1.96, ymin=by-byse*1.96, ymax=by+byse*1.96, color=mean_pph4)) + -->
-<!--   geom_point() + -->
-<!--   geom_smooth(method="lm", se=F) -->
-<!-- p -->
-<!-- ``` -->
+# turn of variants not in either tissue
+h@index_snp[!h@snps %in% c(tissue1_varid, tissue2_varid)] <- FALSE
+h@exposure <- "BMI tissue 1/2 SNPs"
 
-<!-- ## IVW regression by different PPH4 weighting distributions -->
-<!-- ```{r, warning=FALSE, message=FALSE} -->
-<!-- ivw_result <- weighted[, { -->
-<!--   weights <- 1 / (byse^2) -->
-<!--   model   <- lm(by ~ bx_weighted - 0, weights = weights) -->
-<!--   coef_summary <- summary(model)$coefficients -->
-<!--   slope        <- coef_summary["bx_weighted", "Estimate"] -->
-<!--   se_slope     <- coef_summary["bx_weighted", "Std. Error"] -->
-<!--   list(slope = slope, se = se_slope) -->
-<!-- }, by = mean_pph4] -->
+res1 <- run_mr(h)
+kable(res1, caption = "BMI:HF Mendelian randomisation (Tissue 1 & 2 SNPs only)")
 
-<!-- ivw_result[, mean_pph4 := as.numeric(as.character(mean_pph4))] -->
+plot_mr(h, res1)
+```
 
-<!-- p <- ggplot(ivw_result, aes(x=mean_pph4, y=slope, ymin=slope-1.96*se, ymax=slope+1.96*se, color=mean_pph4, group=1)) + -->
-<!--   geom_errorbar() + -->
-<!--   geom_point() + -->
-<!--   labs(y="IVW MR estimate") + -->
-<!--   guides(color = "none") -->
-<!-- p -->
-<!-- ``` -->
+## Run multivariable MR (unweighted)
+```{r}
+#| warning: false
+#| message: false
 
-<!-- ## Interpretation -->
-<!-- Lower colocalisation evidence (lower PPH4) for any given instrument set leads to increasing MR estimate for the effect of BMI on an outcome due to greater down weighting of the BMI betas and consequent increase in the regression slope. -->
+# copy of BMI for tissue 1
+bmi_t1 <- bmi
+bmi_t1@id <- "bmi tissue 1"
+bmi_t1@trait <- "bmi tissue 1"
+
+# copy of BMI for tissue 2
+bmi_t2 <- bmi
+bmi_t2@id <- "bmi tissue 2"
+bmi_t2@trait <- "bmi tissue 2"
+
+# harmonise
+h_mvmr <- MR(list(bmi_t1, bmi_t2), hf)
+
+# turn of variants not in either tissue
+h_mvmr@index_snp[!h_mvmr@snps %in% c(tissue1_varid, tissue2_varid)] <- FALSE
+
+res2 <- run_mr(h_mvmr, methods="mr_ivw")
+kable(res2, caption = "BMI:HF MV Mendelian randomisation")
+
+plot_mr(h_mvmr, res2)
+```
+
+## Create different distributions of PPH4 weights
+For tissue 2 create different distributions of weights
+```{r}
+#| warning: false
+#| message: false
+
+min_pph4 <- 0.8
+weights <- lapply(1:20, function(dist_shape) {
+  d <- data.table(varid = h_mvmr@snps[h_mvmr@index_snp])
+  norm <- rnorm(1000, mean = 0, sd = 1)
+  hi_dist <- 0.9 + (1.0 - 0.9) * (norm - min(norm)) / (max(norm) - min(norm))
+  lo_dist <- 0.0 + (0.3 - 0.0) * (norm - min(norm)) / (max(norm) - min(norm))
+  sq_dist <- min_pph4 + (1.0 - min_pph4) * rbeta(1000, shape1 = 1, shape2 = dist_shape)
+  d[, tissue := fcase(varid %in% overlap_varid, "both", 
+                      varid %in% tissue1_varid, "tissue1", 
+                      varid %in% tissue2_varid, "tissue2")]
+  d[tissue=="both",    c("pph4_t1", "pph4_t2") := .(sample(hi_dist, .N, replace = T), sample(sq_dist, .N, replace = T))]
+  d[tissue=="tissue1", c("pph4_t1", "pph4_t2") := .(sample(hi_dist, .N, replace = T), sample(lo_dist, .N, replace = T))]
+  d[tissue=="tissue2", c("pph4_t1", "pph4_t2") := .(sample(lo_dist, .N, replace = T), sample(sq_dist, .N, replace = T))]
+  d[, t2_shape := dist_shape]
+  d
+}) |> rbindlist()
+weights[, mean_pph4_t2 := round(mean(pph4_t2[tissue %in% c("both","tissue2")]),3), by=.(t2_shape)]
+weights[, mean_pph4_t2 := factor(mean_pph4_t2, levels = sort(unique(mean_pph4_t2)))]
+
+ggplot(weights, aes(x=pph4_t2, fill=mean_pph4_t2)) +
+  geom_density(alpha=0.2) +
+  theme_classic() +
+  guides(fill = "none")
+```
+
+## Effect different PPH4 weights
+Fix the PPH4 weighting on tissue 1 to PPH4=1.0, i.e. unadjusted BMI beta. Then apply the different weights to tissue 2.
+```{r}
+#| warning: false
+#| message: false
+
+res_weighted <- weights[, {
+  h_tmp <- h_mvmr
+  order_idx <- match(varid, h_tmp@snps)
+  h_tmp@bx[order_idx,1] <- h_tmp@bx[order_idx,1] * pph4_t1
+  h_tmp@bx[order_idx,2] <- h_tmp@bx[order_idx,2] * pph4_t2
+  .(tissue = rep(h_tmp@exposure_id, each=length(order_idx)), beta_bmi = c(h_tmp@bx[order_idx,1], h_tmp@bx[order_idx,2]), beta_hf = rep(h_tmp@by[order_idx],2))
+}, by = mean_pph4_t2]
+
+
+ggplot(res_weighted, aes(x=beta_bmi, y=beta_hf, color=tissue)) +
+  geom_point() +
+  geom_smooth(method="lm", se=F) +
+  facet_wrap(~mean_pph4_t2, labeller = labeller(mean_pph4_t2 = function(x) paste("Mean PPH4 =", x)))
+```
+
+## IVW regression by different PPH4 weighting distributions
+```{r}
+#| warning: false
+#| message: false
+
+mr_weighted <- weights[, {
+  h_tmp <- h_mvmr
+  order_idx <- match(varid, h_tmp@snps)
+  h_tmp@bx[order_idx,1] <- h_tmp@bx[order_idx,1] * pph4_t1
+  h_tmp@bx[order_idx,2] <- h_tmp@bx[order_idx,2] * pph4_t2
+  r <- run_mr(h_tmp, methods="mr_ivw")
+  r[, used_mean_pph4 := mean(pph4_t2[pph4_t2>min_pph4])]
+  r
+}, by = mean_pph4_t2]
+
+ggplot(mr_weighted, aes(x=used_mean_pph4, y=exp(b), ymin=exp(b-b_se*1.96), ymax=exp(b+b_se*1.96), color=exposure)) +
+  geom_point() +
+  geom_errorbar()
+```
+
+## Number of colocalising loci
+The actual PPH4 value does not seem to have a great influence, it may be just more to do with the number of colocalising variants in each tissue. 
+
+## Interpretation
+Lower colocalisation evidence (lower PPH4) for any given instrument set leads to increasing MR estimate for the effect of BMI on an outcome due to greater down weighting of the BMI betas and consequent increase in the regression slope.
