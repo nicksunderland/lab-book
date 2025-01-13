@@ -111,7 +111,7 @@ kable(res2, caption = "BMI:HF MV Mendelian randomisation")
 plot_mr(h_mvmr, res2)
 ```
 
-## BMI:eQTL PPH4 distributions by tissue
+## eQTL colocalising BMI variants
 
 ### Number of colocalising variants per tissue
 ```{r}
@@ -128,10 +128,127 @@ ggplot(coloc_counts, aes(y = tissue, x = `num_coloc_pph4`)) +
   theme(axis.title.y = element_blank())
 ```
 
-### Max. PPH4 distributions by tissue
-Take the maximum PPH4 from genes in close proximity to each variant, in each tissue. 
+### Determinants of colocalisation number
+Does this depend on eqtl sample size????
 ```{r}
-num_tissues <- 20
+plot(cars)
+```
+
+### Effect of number of colocalising loci on MVMR result - 1
+Simple analysis: hold constant the number of colocalising variants in tissue 1 (set to median: `r round(median(coloc_counts$num_coloc_pph4))`) and hold the PPH4 weighting for colocalising variants at `0.9` and the for the non-colocalising variants at `0.2`.
+```{r}
+num_loci <- expand.grid(num_t1  = round(median(coloc_counts$num_coloc_pph4)), 
+                        num_t2  = seq(min(coloc_counts$num_coloc_pph4), max(coloc_counts$num_coloc_pph4)),
+                        pph4_hi = 0.9, 
+                        pph4_lo = 0.2) |> as.data.table()
+
+unique_num_loci <- sort(unique(c(num_loci$num_t1, num_loci$num_t2)))
+unique_num_loci <- setNames(unique_num_loci, as.character(unique_num_loci))
+
+loci_indicies <- lapply(unique_num_loci, function(num_l) {
+  set.seed(123)
+  sample(1:length(h_mvmr@snps), num_l, replace = FALSE)
+})
+
+mr_num_loci <- num_loci[, {
+  h_tmp   <- copy(h_mvmr)
+  t1_incides <- loci_indicies[[as.character(num_t1)]]
+  t2_incides <- loci_indicies[[as.character(num_t2)]]
+  h_tmp@index_snp <- ifelse(1:length(h_tmp@snps) %in% union(t1_incides, t2_incides), TRUE, FALSE) 
+  h_tmp@bx[t1_incides,1] <- h_tmp@bx[t1_incides,1] * pph4_hi
+  h_tmp@bx[t2_incides,2] <- h_tmp@bx[t2_incides,2] * pph4_hi
+  h_tmp@bx[setdiff(t2_incides, t1_incides),1] <- h_tmp@bx[setdiff(t2_incides, t1_incides),1] * pph4_lo
+  h_tmp@bx[setdiff(t1_incides, t2_incides),2] <- h_tmp@bx[setdiff(t1_incides, t2_incides),2] * pph4_lo
+  h_tmp@exposure <- c("Tissue 1", "Tissue 2")
+  r <- run_mr(h_tmp, methods="mr_ivw")
+}, by = .(num_t1, num_t2)]
+
+ggplot(mr_num_loci, aes(x=num_t2, y=exp(b), ymin=exp(b-b_se*1.96), ymax=exp(b+b_se*1.96), color=exposure)) +
+  geom_errorbar(width=0.2, position = position_dodge(0.2)) +
+  geom_point(position = position_dodge(0.2)) +
+  labs(y = "MVMR estimate (tpBMI vs HF)", 
+       x = "Number of tissue 2 loci", 
+       color = "Tissue", 
+       subtitle = paste0("Number of loci for tissue 1 fixed at ", num_loci$num_t1[1]))
+
+```
+
+### Effect of number of colocalising loci on MVMR result - 2
+Now do the same but vary both the number of colocalising variants in tissue 1 and 2 (grid search).
+```{r}
+num_loci <- expand.grid(num_t1  = seq(min(coloc_counts$num_coloc_pph4), max(coloc_counts$num_coloc_pph4), 40), 
+                        num_t2  = seq(min(coloc_counts$num_coloc_pph4), max(coloc_counts$num_coloc_pph4), 40),
+                        overlap = seq(0, 1, 0.2),
+                        seed    = 2000:2050,
+                        pph4_hi = 0.9, 
+                        pph4_lo = 0.1) |> as.data.table()
+
+library(future)
+library(furrr)
+plan(multisession)
+mr_num_loci <- future_pmap_dfr(num_loci, function(num_t1, num_t2, overlap, seed, pph4_hi, pph4_lo) {
+  
+  h_tmp   <- copy(h_mvmr)
+  
+  # randomly sort the BMI SNP indices
+  set.seed(seed)
+  sram_idx <- sample.int(length(h_mvmr@snps))
+  
+  # indicies of the variants to use
+  overlap_n <- round(min(num_t1, num_t2) * overlap)
+  t1i       <- sram_idx[1:num_t1]
+  t2i       <- sram_idx[(num_t1-overlap_n+1):(num_t2 + num_t1-overlap_n)]
+  t12i      <- intersect(t1i, t2i)  # both tissues
+  ut1i      <- setdiff(t1i, t12i)   # only tissue 1
+  ut2i      <- setdiff(t2i, t12i)   # only tissue 2
+  
+  # which snps go into the instrument
+  h_tmp@index_snp <- 1:length(h_mvmr@snps) %in% c(t12i, ut1i, ut2i)
+  
+  # weight tissue 1 betas
+  h_tmp@bx[ut2i,1] <- h_tmp@bx[ut2i,1] * pph4_lo 
+  h_tmp@bx[t1i,1]  <- h_tmp@bx[t1i,1] * pph4_hi 
+  
+  # weight tissue 2 betas
+  h_tmp@bx[ut1i,2] <- h_tmp@bx[ut1i,2] * pph4_lo 
+  h_tmp@bx[t2i,2]  <- h_tmp@bx[t2i,2] * pph4_hi 
+  
+  # naming
+  h_tmp@exposure <- c("MV-beta tissue 1", "MV-beta tissue 2")
+  
+  # run mr
+  r <- run_mr(h_tmp, methods="mr_ivw")
+  
+  r[, `:=`(num_t1   = num_t1, 
+           num_t2   = num_t2, 
+           num_diff = num_t1-num_t2, 
+           overlap  = overlap, 
+           seed     = seed, 
+           pph4_lo  = pph4_lo, 
+           pph4_hi  = pph4_hi)]
+  
+  return(r)
+})
+
+
+ggplot(mr_num_loci, aes(x=as.factor(num_diff), y=b, fill=exposure, color=num_t1)) +
+  geom_hline(yintercept = 0.0, linetype="dashed", color="darkgray") +
+  geom_violin(width=1, position= position_dodge(width = 0.5), color=NA) +
+  theme_classic() +
+  labs(x = "Difference in instrument size (num SNPs, T1-T2)", 
+       y = "MVMR estimate", 
+       fill = "Tissue") +
+  facet_wrap(~overlap, 
+             #scales = "free", 
+             labeller = labeller(overlap = function(x) paste0("Loci overlap: ", scales::percent(as.numeric(x)))))
+```
+
+
+## BMI:eQTL PPH4 distributions by tissue
+Now lets look at the actual distributions of the PPH4 values in each tissue, since they are not fixed like in the above analyses. Take the maximum PPH4 from genes in close proximity to each variant, in each tissue and plot the distributions - these are the weights that would be used in the tissue-partitioned MR procedure. 
+
+```{r}
+num_tissues <- 6
 tissues_subset <- levels(coloc_counts$tissue)[as.integer(seq(1, length(levels(coloc_counts$tissue)), length.out=num_tissues))] 
 coloc_subset <- coloc_results[locus_trait=="bmi" & trait.x=="bmi" & (trait.y %in% tissues_subset), .SD[which.max(pph4)], by=.(locus_index_rsid,trait.y)]
 
@@ -146,8 +263,8 @@ ggplot(density, aes(x=pph4, y=prob, color=tissue)) +
   labs(y = "Density")
 ```
 
-## Can we achieve these densities randomly 
-Yes, just sample the PPH4 from the actual density distributions above.
+## Use of these distributions in simulations 
+If we want 'real-world' PPH4 weights for use in simulations we can just sample from these density distributions. Here is a quick check to show that sampling from them replicates the shape.
 ```{r}
 #| warning: false
 #| message: false
@@ -157,7 +274,7 @@ tissues <- expand.grid(tissue = unique(density$tissue), stringsAsFactors = F) |>
 set.seed(123)
 
 res_sim_density <- tissues[, {
-  .(sim_pph4 = sample(density[tissue==.BY$tissue, pph4], length(h_mvmr@bx[,1]), prob = density[tissue==.BY$tissue, prob], replace = TRUE))
+  .(sim_pph4 = sample(density[tissue==.BY$tissue, pph4], round(length(h_mvmr@bx[,1])/2), prob = density[tissue==.BY$tissue, prob], replace = TRUE))
 }, by = .(tissue)]
 
 
@@ -165,7 +282,8 @@ ggplot(res_sim_density, aes(x=sim_pph4, color=tissue)) +
   theme_classic() +
   geom_density() +
   labs(y = "Simulated density", 
-       x = "Simulated PPH4")
+       x = "Simulated PPH4", 
+       color = "Tissue")
 ```
 
 
@@ -175,10 +293,8 @@ Weight the BMI betas by their respective maximum PPH4 value, see how this change
 #| warning: false
 #| message: false
 
-ref_tissue <- levels(density$tissue)[1]
+ref_tissue   <- levels(density$tissue)[1]
 tissue_pairs <- expand.grid(t1 = ref_tissue, t2 = unique(density$tissue), stringsAsFactors = F) |> as.data.table()
-tissue_pairs[density[, .(mean_pph4 = mean(pph4*prob)), by=tissue], t1_mean_pph4 := i.mean_pph4, on=c("t1"="tissue")]
-tissue_pairs[density[, .(mean_pph4 = mean(pph4*prob)), by=tissue], t2_mean_pph4 := i.mean_pph4, on=c("t2"="tissue")]
 
 set.seed(123)
 t1_pph4 <- sample(density[tissue==ref_tissue, pph4], length(h_mvmr@bx[,1]), prob = density[tissue==ref_tissue, prob], replace = TRUE)
@@ -193,9 +309,11 @@ res_weighted <- tissue_pairs[, {
     beta_bmi = c(h_tmp@bx[h_tmp@index_snp,1], h_tmp@bx[h_tmp@index_snp,2]), 
     beta_hf  = rep(h_tmp@by[h_tmp@index_snp],2),
     mean_pph4_t1 = mean(t1_pph4[t1_pph4>coloc_thresh | t2_pph4>coloc_thresh]),
-    mean_pph4_t2 = mean(t2_pph4[t1_pph4>coloc_thresh | t2_pph4>coloc_thresh]))
+    mean_pph4_t2 = mean(t2_pph4[t1_pph4>coloc_thresh | t2_pph4>coloc_thresh]), 
+    rmse_pph4    = sqrt(mean((t1_pph4[t1_pph4>coloc_thresh | t2_pph4>coloc_thresh] - t2_pph4[t1_pph4>coloc_thresh | t2_pph4>coloc_thresh])^2))
+   )
 }, by = .(t1,t2)]
-
+res_weighted[, t2 := factor(t2, levels = unique(t2[order(-mean_pph4_t1)]))]
 
 ggplot(res_weighted, aes(x=beta_bmi, y=beta_hf, color=tissue)) +
   geom_point() +
@@ -211,120 +329,112 @@ ggplot(res_weighted, aes(x=beta_bmi, y=beta_hf, color=tissue)) +
             color="black", size=2) +
   geom_smooth(method="lm", se=F,fullrange = TRUE) +
   facet_wrap(~t2, labeller = labeller(t2 = function(x) gsub("_", " ", x))) +
-  labs(y = "Heart failure beta", 
+  labs(subtitle = paste("coloc thresh:", coloc_thresh), 
+       y = "Heart failure beta", 
        x = "BMI beta (PPH4-weighted)", 
        color = "Tissue")
 ```
 
+
 ## IVW regression by different PPH4 weighting distributions
 Perform MVMR with the weighted BMI instruments. Lets look at holding a poorly colocalising tissue constant compared to the best colocalising tissues.
 
-### Reference: top colocalising tissue
-Different distributions against the top colocalising tissue. 
+### Function to weight betas and run MR 
 ```{r}
-#| warning: false
-#| message: false
-
-ref_tissue <- levels(density$tissue)[1] # top colocalising tissue
-tissue_pairs <- expand.grid(t1 = ref_tissue, t2 = unique(density$tissue), stringsAsFactors = F) |> as.data.table()
-tissue_pairs[density[, .(mean_pph4 = mean(pph4*prob)), by=tissue], t1_mean_pph4 := i.mean_pph4, on=c("t1"="tissue")]
-tissue_pairs[density[, .(mean_pph4 = mean(pph4*prob)), by=tissue], t2_mean_pph4 := i.mean_pph4, on=c("t2"="tissue")]
-
-set.seed(123)
-t1_pph4 <- sample(density[tissue==ref_tissue, pph4], length(h_mvmr@bx[,1]), prob = density[tissue==ref_tissue, prob], replace = TRUE)
-
-mr_weighted <- tissue_pairs[, {
-  h_tmp <- h_mvmr
-  t2_pph4 <- sample(density[tissue==.BY$t2, pph4], length(h_tmp@bx[,1]), prob = density[tissue==.BY$t2, prob], replace = TRUE)
-  h_tmp@bx[,1] <- h_tmp@bx[,1] * t1_pph4
-  h_tmp@bx[,2] <- h_tmp@bx[,2] * t2_pph4
-  h_tmp@index_snp <- ifelse(t1_pph4>coloc_thresh | t2_pph4>coloc_thresh, TRUE, FALSE)
-  h_tmp@exposure[1] <- paste0("Ref: ", ref_tissue)
-  h_tmp@exposure[2] <- "Comparator"
-  r <- run_mr(h_tmp, methods="mr_ivw")
-  r[, `:=`(n_sig_snps = c(sum(t1_pph4>coloc_thresh), sum(t2_pph4>coloc_thresh)), 
-           n_overlap_snps = sum(t1_pph4>coloc_thresh & t2_pph4>coloc_thresh))]
-}, by = .(t1,t2,t1_mean_pph4,t2_mean_pph4)]
-
-ggplot(mr_weighted, aes(x=t2, y=exp(b), ymin=exp(b-b_se*1.96), ymax=exp(b+b_se*1.96), color=exposure)) +
-  geom_errorbar(width=0.2, position = position_dodge(0.2)) +
-  geom_point(aes(size=n_sig_snps), position = position_dodge(0.2)) +
-  theme(axis.text.x = element_text(angle=45, hjust=1), 
-        axis.title.y = element_blank()) +
-  labs(y = "MR estimate (tpBMI vs HF)", color = "Tissue", size = "Num. SNPs contributed to model")
-```
-### Reference: worst colocalising tissue
-Then, different distributions against the worst colocalising tissue. 
-```{r}
-#| warning: false
-#| message: false
-
-ref_tissue <- levels(density$tissue)[length(levels(density$tissue))] # bottom/worst colocalising tissue
-
-tissue_pairs <- expand.grid(t1 = ref_tissue, t2 = unique(density$tissue), stringsAsFactors = F) |> as.data.table()
-tissue_pairs[density[, .(mean_pph4 = mean(pph4*prob)), by=tissue], t1_mean_pph4 := i.mean_pph4, on=c("t1"="tissue")]
-tissue_pairs[density[, .(mean_pph4 = mean(pph4*prob)), by=tissue], t2_mean_pph4 := i.mean_pph4, on=c("t2"="tissue")]
-
-set.seed(123)
-t1_pph4 <- sample(density[tissue==ref_tissue, pph4], length(h_mvmr@bx[,1]), prob = density[tissue==ref_tissue, prob], replace = TRUE)
-
-mr_weighted <- tissue_pairs[, {
-  h_tmp <- h_mvmr
-  t2_pph4 <- sample(density[tissue==.BY$t2, pph4], length(h_tmp@bx[,1]), prob = density[tissue==.BY$t2, prob], replace = TRUE)
-  h_tmp@bx[,1] <- h_tmp@bx[,1] * t1_pph4
-  h_tmp@bx[,2] <- h_tmp@bx[,2] * t2_pph4
-  h_tmp@index_snp <- ifelse(t1_pph4>coloc_thresh | t2_pph4>coloc_thresh, TRUE, FALSE)
-  h_tmp@exposure[1] <- paste0("Ref: ", ref_tissue)
-  h_tmp@exposure[2] <- "Comparator"
-  r <- run_mr(h_tmp, methods="mr_ivw")
-  r[, `:=`(n_sig_snps = c(sum(t1_pph4>coloc_thresh), sum(t2_pph4>coloc_thresh)), 
-           n_overlap_snps = sum(t1_pph4>coloc_thresh & t2_pph4>coloc_thresh))]
-}, by = .(t1,t2,t1_mean_pph4,t2_mean_pph4)]
-
-ggplot(mr_weighted, aes(x=t2, y=exp(b), ymin=exp(b-b_se*1.96), ymax=exp(b+b_se*1.96), color=exposure)) +
-  geom_errorbar(width=0.2, position = position_dodge(0.2)) +
-  geom_point(aes(size=n_sig_snps), position = position_dodge(0.2)) +
-  theme(axis.text.x = element_text(angle=45, hjust=1), 
-        axis.title.y = element_blank()) +
-  labs(y = "MR estimate (tpBMI vs HF)", color = "Tissue", size = "Num. SNPs contributed to model")
+#' @title TPMR helper function
+#' @param mrobj genepi.utils MR object (exposures BMI:BMI, outcome HF)
+#' @param density data.table of PPH4 density distributions cols: tissue | pph4 | prob
+#' @param ref character vector, tissues in density$tissue
+#' @param comp character vector, tissues in density$tissue
+#' @param coloc_thresh numeric 0-1
+#' @param rep integer, number of replications (random sampling of BMI variants into instrument)
+#' @returns data.table of MR results
+#'
+tpmr <- function(obj, density, ref, comp, coloc_thresh, rep = 50) {
+  
+  # run the MR for each of the exposure combinations
+  tissue_pairs <- expand.grid(t1 = as.character(ref), 
+                              t2 = as.character(comp),
+                              seed = 2000:(2000+rep),
+                              stringsAsFactors = F) |> as.data.table()
+  
+  library(future)
+  library(furrr)
+  plan(multisession)
+  mr_weighted <- future_pmap_dfr(tissue_pairs, function(t1, t2, seed) {
+    
+    mrobj <- copy(obj)
+    
+    # generate the PPH4 values randomly for the variants
+    set.seed(seed)
+    t1_pph4 <- sample(density[tissue==t1, pph4], length(mrobj@snps), prob = density[tissue==t1, prob], replace = TRUE)
+    set.seed(seed+1)
+    t2_pph4 <- sample(density[tissue==t2, pph4], length(mrobj@snps), prob = density[tissue==t2, prob], replace = TRUE)
+    
+    # based on the distribution of PPH4, which SNPs are included
+    include <- ifelse(t1_pph4 > coloc_thresh | t2_pph4 > coloc_thresh, TRUE, FALSE)
+    
+    # update the MR object, turn off the excluded snps (@index_snp slot)
+    mrobj@bx[,1]      <- mrobj@bx[,1] * t1_pph4
+    mrobj@bx[,2]      <- mrobj@bx[,2] * t2_pph4
+    mrobj@index_snp   <- include
+    mrobj@exposure[1] <- ifelse(length(ref)==1, paste0("Ref: ", ref_tissue), "Tissue 1")
+    mrobj@exposure[2] <- ifelse(length(ref)==1, "Comparator", "Tissue 2")
+    
+    # run the MR
+    r <- run_mr(mrobj, methods="mr_ivw")
+    
+    # add info about the instrument used
+    r[, `:=`(t1             = t1, 
+             t2             = t2,
+             seed           = seed,
+             n_sig_snps     = c(sum(t1_pph4 > coloc_thresh), sum(t2_pph4 > coloc_thresh)), 
+             n_overlap_snps = sum(t1_pph4 > coloc_thresh & t2_pph4 > coloc_thresh),
+             pct_t1_overlap = sum(t1_pph4 > coloc_thresh & t2_pph4 > coloc_thresh) / length(t1_pph4),
+             mean_pph4_t1   = mean(t1_pph4[include]),
+             mean_pph4_t2   = mean(t2_pph4[include]),
+             rmse_pph4      = sqrt(mean((t1_pph4[include] - t2_pph4[include])^2)), 
+             rmse_wbeta     = sqrt(mean((mrobj@bx[,1] - mrobj@bx[,2])^2)))]
+    r[, c("overdispersion", "n_pc", "n_hunted", "slopehunter_pi", "slopehunter_ent") := NULL]
+    
+})
+#  }, by = .(t1,t2,seed)]
+  
+  return(mr_weighted)
+}
 ```
 
 
-## Number of colocalising loci
-Is it just mostly to do with the difference in the number of colocalising variants in each tissue. Run MR for all pairs of tissues.
+### Different PPH4 distributions against each other 
 ```{r}
 #| warning: false
 #| message: false
 
-tissue_pairs <- expand.grid(t1 = unique(density$tissue), t2 = unique(density$tissue), stringsAsFactors = F) |> as.data.table()
-tissue_pairs[density[, .(mean_pph4 = mean(pph4*prob)), by=tissue], t1_mean_pph4 := i.mean_pph4, on=c("t1"="tissue")]
-tissue_pairs[density[, .(mean_pph4 = mean(pph4*prob)), by=tissue], t2_mean_pph4 := i.mean_pph4, on=c("t2"="tissue")]
+# run TPMR
+mr_weighted <- tpmr(obj=h_mvmr, density=density, 
+                    ref= unique(density$tissue), 
+                    comp=unique(density$tissue), 
+                    coloc_thresh=0.8, 
+                    rep = 100)
 
-set.seed(123)
-mr_weighted <- tissue_pairs[, {
-  h_tmp <- h_mvmr
-  t1_pph4 <- sample(density[tissue==.BY$t1, pph4], length(h_tmp@bx[,1]), prob = density[tissue==.BY$t1, prob], replace = TRUE)
-  t2_pph4 <- sample(density[tissue==.BY$t2, pph4], length(h_tmp@bx[,1]), prob = density[tissue==.BY$t2, prob], replace = TRUE)
-  h_tmp@bx[,1] <- h_tmp@bx[,1] * t1_pph4
-  h_tmp@bx[,2] <- h_tmp@bx[,2] * t2_pph4
-  h_tmp@index_snp <- ifelse(t1_pph4>coloc_thresh | t2_pph4>coloc_thresh, TRUE, FALSE)
-  h_tmp@exposure[1] <- "t1"
-  h_tmp@exposure[2] <- "t2"
-  r <- run_mr(h_tmp, methods="mr_ivw")
-  r[, `:=`(n_sig_snps = c(sum(t1_pph4>coloc_thresh), sum(t2_pph4>coloc_thresh)),
-           n_uni_snps = c(length(setdiff(which(t1_pph4>coloc_thresh), which(t2_pph4>coloc_thresh))), length(setdiff(which(t2_pph4>coloc_thresh), which(t1_pph4>coloc_thresh)))),
-           n_overlap_snps = sum(t1_pph4>coloc_thresh & t2_pph4>coloc_thresh), 
-           n_sig_diff = sum(t1_pph4>coloc_thresh) - sum(t2_pph4>coloc_thresh), 
-           exp_b_diff = diff(range(exp(b))))]
-}, by = .(t1,t2,t1_mean_pph4,t2_mean_pph4)]
+# reorder for plotting 
+mr_weighted[, mean_pph4_t1_lab := round(mean(mean_pph4_t1),2), by=.(t1)]
+mr_weighted[, mean_pph4_t2_lab := round(mean(mean_pph4_t2),2), by=.(t2)]
+mr_weighted[, mean_n_sig_snps := round(mean(mean_pph4_t2),0), by=.(t1,t2)]
 
-ggplot(mr_weighted, aes(x=n_sig_snps, y=exp(b), ymin=exp(b-b_se*1.96), ymax=exp(b+b_se*1.96), color=exposure)) +
-  geom_errorbar(width=0.2, position = position_dodge(0.2)) +
-  geom_point(position = position_dodge(0.2)) +
-  theme(axis.text.x = element_text(angle=45, hjust=1), 
-        axis.title.y = element_blank()) +
-  labs(y = "MR estimate (tpBMI vs HF)", color = "Tissue", size = "Num. SNPs contributed to model") +
-  facet_wrap(~exposure)
+ggplot(mr_weighted, 
+       aes(x=as.factor(mean_pph4_t2_lab), y=b, color=exposure)) +
+  geom_boxplot() +
+  theme_bw() +
+  labs(y = "MVMR estimate", x = "T2 mean PPH4", color = "Tissue") +
+  facet_wrap(~ as.factor(mean_pph4_t1_lab), labeller = labeller(`as.factor(mean_pph4_t1_lab)`=function(x) paste0("T1 mean PPH4: ",x)))
+
+ggplot(mr_weighted[, .(b=mean(b)), by=.(t1,t2,exposure)][, .(b_diff=b[1]-b[2]), by=.(t1,t2)], 
+       aes(y=t1, x=t2, fill=b_diff)) +
+  geom_tile() +
+  scale_fill_gradient2() +
+  theme(axis.text.x  = element_text(angle=45, hjust=1)) +
+  labs(y = "Tissue 1", x = "Tissue 2", fill = "T1-T2 beta diff")
 ```
 
 ## Interpretation
