@@ -176,6 +176,9 @@ ggplot(mr_num_loci, aes(x=num_t2, y=exp(b), ymin=exp(b-b_se*1.96), ymax=exp(b+b_
 ### Effect of number of colocalising loci on MVMR result - 2
 Now do the same but vary both the number of colocalising variants in tissue 1 and 2 (grid search).
 ```{r}
+#| warning: false
+#| message: false
+
 num_loci <- expand.grid(num_t1  = seq(min(coloc_counts$num_coloc_pph4), max(coloc_counts$num_coloc_pph4), 40), 
                         num_t2  = seq(min(coloc_counts$num_coloc_pph4), max(coloc_counts$num_coloc_pph4), 40),
                         overlap = seq(0, 1, 0.2),
@@ -248,6 +251,9 @@ ggplot(mr_num_loci, aes(x=as.factor(num_diff), y=b, fill=exposure, color=num_t1)
 Now lets look at the actual distributions of the PPH4 values in each tissue, since they are not fixed like in the above analyses. Take the maximum PPH4 from genes in close proximity to each variant, in each tissue and plot the distributions - these are the weights that would be used in the tissue-partitioned MR procedure. 
 
 ```{r}
+#| warning: false
+#| message: false
+
 num_tissues <- 6
 tissues_subset <- levels(coloc_counts$tissue)[as.integer(seq(1, length(levels(coloc_counts$tissue)), length.out=num_tissues))] 
 coloc_subset <- coloc_results[locus_trait=="bmi" & trait.x=="bmi" & (trait.y %in% tissues_subset), .SD[which.max(pph4)], by=.(locus_index_rsid,trait.y)]
