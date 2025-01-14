@@ -116,6 +116,9 @@ plot_mr(h_mvmr, res2)
 
 ### Number of colocalising variants per tissue
 ```{r}
+#| warning: false
+#| message: false
+
 coloc_thresh <- 0.8
 
 coloc_results <- fread(file.path(TPMR_DIR, "output", "tables", "coloc_results.tsv.gz"))
@@ -156,6 +159,7 @@ ggplot(coloc_counts, aes(y = mean_sample_n, x = num_coloc_pph4, color = mean_pph
 ### Effect of number of colocalising loci on MVMR result - 1
 Simple analysis: hold constant the number of colocalising variants in tissue 1 (set to median: `r round(median(coloc_counts$num_coloc_pph4))`) and hold the PPH4 weighting for colocalising variants at `0.9` and the for the non-colocalising variants at `0.2`.
 ```{r}
+
 num_loci <- expand.grid(num_t1  = round(median(coloc_counts$num_coloc_pph4)), 
                         num_t2  = seq(min(coloc_counts$num_coloc_pph4), max(coloc_counts$num_coloc_pph4)),
                         pph4_hi = 0.9, 
@@ -503,7 +507,6 @@ ggplot(mr_weighted[, .(b=mean(b)), by=.(t1,t2,exposure)][, .(b_diff=b[1]-b[2]), 
 ```{r}
 #| warning: false
 #| message: false
-
 tissue_pph4_vals <- coloc_results[locus_trait=="bmi" & 
                                     trait.x=="bmi" & 
                                     gene_type.y=="protein_coding", 
@@ -520,8 +523,8 @@ mr_actual <- tpmr(obj=h_mvmr, pph4=tissue_pph4_vals,
 ggplot((mr_actual
         [coloc_counts, t1_n := i.mean_sample_n, on=c("t1"="tissue")]
         [coloc_counts, t2_n := i.mean_sample_n, on=c("t2"="tissue")]
-        [, `:=`(b_diff     = b[1]-b[2],
-                snp_diff   = n_sig_snps[1]-n_sig_snps[2],
+        [, `:=`(b_diff     = b[exposure=="Tissue 1"]-b[exposure=="Tissue 2"],
+                snp_diff   = n_sig_snps[exposure=="Tissue 1"]-n_sig_snps[exposure=="Tissue 2"],
                 pph4_diff  = mean_pph4_t1-mean_pph4_t2, 
                 nsamp_diff = t1_n - t2_n), by=.(t1,t2)]
         [, `:=`(t1 = factor(t1, levels = unique(t1[order(-b_diff)])),
@@ -534,43 +537,31 @@ ggplot((mr_actual
 ```
 
 
-### MVMR estimates depend on difference in instrument size
+### MVMR estimates depend on difference in instrument size (which also depends on difference in sample size)
 ```{r}
 #| warning: false
 #| message: false
-
 ggplot((mr_actual
         [coloc_counts, t1_n := i.mean_sample_n, on=c("t1"="tissue")]
         [coloc_counts, t2_n := i.mean_sample_n, on=c("t2"="tissue")]
-        [, `:=`(snp_diff   = n_sig_snps[1]-n_sig_snps[2],
+        [, `:=`(b_diff     = b[exposure=="Tissue 1"]-b[exposure=="Tissue 2"],
+                snp_diff   = n_sig_snps[exposure=="Tissue 1"]-n_sig_snps[exposure=="Tissue 2"],
                 pph4_diff  = mean_pph4_t1-mean_pph4_t2, 
                 nsamp_diff = t1_n - t2_n), by=.(t1,t2)]
        ),
-       aes(y=b, x=snp_diff, color=exposure)) +
+       aes(y=b_diff, x=snp_diff, color=nsamp_diff)) +
+  geom_hline(yintercept = 0.0, linetype="dotted", color="grey") +
+  geom_vline(xintercept = 0.0, linetype="dotted", color="grey") +
   geom_point(alpha=0.3) +
-  geom_smooth(method="lm", se=FALSE) +
-  labs(y = "MVMR estimate", x = expression(Delta~nSNP[T1-T2]), color = "Tissue") +
-  facet_wrap(~exposure)
+  scale_color_viridis_c(option="magma") +
+  geom_smooth(method="lm", se=FALSE, color="red") +
+  theme_classic2() +
+  theme(legend.position = "top") +
+  labs(y = expression(Delta[T1-T2]~MVMR~estimate), 
+       x = expression(Delta[T1-T2]~No.~coloc~SNPs), 
+       color = expression(Delta[T1-T2]~Tissue~sample~size))
 ```
 
-### MVMR estimates depend on difference in tissue sample size
-```{r}
-#| warning: false
-#| message: false
-
-ggplot((mr_actual
-        [coloc_counts, t1_n := i.mean_sample_n, on=c("t1"="tissue")]
-        [coloc_counts, t2_n := i.mean_sample_n, on=c("t2"="tissue")]
-        [, `:=`(snp_diff   = n_sig_snps[1]-n_sig_snps[2],
-                pph4_diff  = mean_pph4_t1-mean_pph4_t2, 
-                nsamp_diff = t1_n - t2_n), by=.(t1,t2)]
-       ),
-       aes(y=b, x=nsamp_diff, color=exposure)) +
-  geom_point(alpha=0.3) +
-  geom_smooth(method="lm", se=FALSE) +
-  labs(y = "MVMR estimate", x = expression(Delta~TissueSampleSize[T1-T2]), color = "Tissue") +
-  facet_wrap(~exposure)
-```
 
 ## Interpretation
-....
+Is the MVMR estimate mostly related to the difference in the relative number of colocalising SNPs in tissue A vs. tissue B? The tissue with fewer colocalising SNPs will liekly be overpowered in the MVMR by the tissue with a greater number of colocalising SNPs. Yet, the number of colocalising SNPs is closely related to the sample size of the eQTL dataset. 
