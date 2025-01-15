@@ -54,18 +54,20 @@ kable(head(as.data.table(h),5), caption = "Harmonised BMI:HF dataset")
 ```
 
 ## Run the MR
+This is just the plain MR of BMI on HF. 
 ```{r}
 res <- run_mr(h)
 kable(res, caption = "BMI:HF Mendelian randomisation")
 ```
 
 ## Plot MR
+Plot MR result of BMI on HF. 
 ```{r, warning=FALSE, message=FALSE}
 plot_mr(h, res)
 ```
 
 ## Select variants - MR with a subset of BMI variants
-In the Leyden et al. 2022 paper 86 variant colocalise with adipose tissue eQTLs and 140 colocalise with brain tissue eQTLs. There is overlap between the two tissues of 43 variants.
+In the Leyden et al. 2022 paper 86 variant colocalise with adipose tissue eQTLs and 140 colocalise with brain tissue eQTLs. There is overlap between the two tissues of 43 variants. Let's run the run of BMI on HF just using these variants - just looks like a similar version of the previous plot but with fewer points. 
 ```{r, warning=FALSE, message=FALSE}
 #| warning: false
 #| message: false
@@ -86,6 +88,7 @@ plot_mr(h, res1)
 ```
 
 ## Run multivariable MR (unweighted)
+Now lets turn this into a multivariable MR situation, with BMI variants for tissues one and BMI variants for tissue 2, against HF. The results are the same, as expected, because there is no differential weighting of the betas, effectively they are just the same instrument. So far nothing new. 
 ```{r}
 #| warning: false
 #| message: false
@@ -113,8 +116,10 @@ plot_mr(h_mvmr, res2)
 ```
 
 ## eQTL colocalising BMI variants
+To separate the BMI instruments for different tissues we need to 'change' them somehow, in a biologically informed way. Hence weighting the betas by the best colocalisation results at each locus.
 
 ### Number of colocalising variants per tissue
+Let's first look at how many BMI variants colocalise with eQTLs from the GTEx version 10 tissues. There is quite a spread.
 ```{r}
 #| warning: false
 #| message: false
@@ -142,9 +147,9 @@ ggplot(coloc_counts, aes(y = tissue, x = `num_coloc_pph4`)) +
 ```
 
 ### Determinants of colocalisation number
-Does this depend on eqtl sample size????
+Does the number of colocalising variants, and/or the mean PPH4 value (across all BMI variants) for each tissue, depend on eQTL sample size? Yes, this appears to be important.
 ```{r}
-ggplot(coloc_counts, aes(y = mean_sample_n, x = num_coloc_pph4, color = mean_pph4, size = num_coloc_genes)) +
+ggplot(coloc_counts, aes(x = mean_sample_n, y = num_coloc_pph4, color = mean_pph4, size = num_coloc_genes)) +
   geom_point() +
   geom_text_repel(aes(label = tissue), size = 2, color="black", max.overlaps = Inf) +
   scale_color_viridis_c(option="mako") +
@@ -157,7 +162,7 @@ ggplot(coloc_counts, aes(y = mean_sample_n, x = num_coloc_pph4, color = mean_pph
 ```
 
 ### Effect of number of colocalising loci on MVMR result - 1
-Simple analysis: hold constant the number of colocalising variants in tissue 1 (set to median: `r round(median(coloc_counts$num_coloc_pph4))`) and hold the PPH4 weighting for colocalising variants at `0.9` and the for the non-colocalising variants at `0.2`.
+Simple simulation - hows does the number of variants used as an instrument effect the MVMR result. Let's hold constant the number of colocalising variants in tissue 1 (set to median: `r round(median(coloc_counts$num_coloc_pph4))`) and then vary the number of variants in tissue 2. For now, let's hold the PPH4 weighting for colocalising variants at constant `0.9` and the for the non-colocalising tissue variants something low, like `0.2`. We see that the MVMR estimate flips when the second tissue has more variants than the first. The tissue with higher numbers of variants has the large MVMR estimate.
 ```{r}
 
 num_loci <- expand.grid(num_t1  = round(median(coloc_counts$num_coloc_pph4)), 
@@ -200,7 +205,7 @@ ggplot(mr_num_loci[, `:=`(b_lb = b-b_se*1.96,
 ```
 
 ### Effect of number of colocalising loci on MVMR result - 2
-Now do the same but vary both the number of colocalising variants in tissue 1 and 2 (grid search).
+Now do the same but vary both the number of colocalising variants in tissue 1 and 2, and the percentage overlap of the instruments (grid search). We see that there has to be some difference in the number of colocalising loci and there needs to be some overlap of the loci in order to separate the MVMR results for each tissue. 
 ```{r}
 #| warning: false
 #| message: false
@@ -260,17 +265,6 @@ mr_num_loci <- future_pmap_dfr(num_loci, function(num_t1, num_t2, overlap, seed,
 })
 
 
-# ggplot(mr_num_loci, aes(x=as.factor(num_diff), y=b, fill=exposure, color=num_t1)) +
-#   geom_hline(yintercept = 0.0, linetype="dashed", color="darkgray") +
-#   geom_violin(width=1, position= position_dodge(width = 0.5), color=NA) +
-#   theme_classic() +
-#   labs(x = "Difference in instrument size (num SNPs, T1-T2)", 
-#        y = "MVMR estimate", 
-#        fill = "Tissue") +
-#   facet_wrap(~overlap, 
-#              labeller = labeller(overlap = function(x) paste0("Loci overlap: ", scales::percent(as.numeric(x)))))
-
-
 ggplot(mr_num_loci[, num_diff_lab := paste0("Delta~nSNP[T1-T2]:~ ", num_diff)], 
        aes(x=as.factor(overlap), y=b, fill=exposure, color=num_t1)) +
   geom_hline(yintercept = 0.0, linetype="dashed", color="darkgray") +
@@ -296,7 +290,7 @@ Now lets look at the actual distributions of the PPH4 values in each tissue, sin
 
 num_tissues <- 6
 tissues_subset <- levels(coloc_counts$tissue)[as.integer(seq(1, length(levels(coloc_counts$tissue)), length.out=num_tissues))] 
-coloc_subset <- coloc_results[locus_trait=="bmi" & trait.x=="bmi" & (trait.y %in% tissues_subset), .SD[which.max(pph4)], by=.(locus_index_rsid,trait.y)]
+coloc_subset <- coloc_results[locus_trait=="bmi" & trait.x=="bmi" & (trait.y %in% tissues_subset) & grepl("protein_coding", gene_type.y), .SD[which.max(pph4)], by=.(locus_index_rsid,trait.y)]
 
 density <- coloc_subset[, {
   den <- density(pph4, n=1000)
@@ -383,7 +377,7 @@ ggplot(res_weighted, aes(x=beta_bmi, y=beta_hf, color=tissue)) +
 
 
 ## IVW regression by different PPH4 weighting distributions
-Perform MVMR with the weighted BMI instruments. Lets look at holding a poorly colocalising tissue constant compared to the best colocalising tissues.
+Perform MVMR with the weighted BMI instruments. Lets look at varying the distributions that the PPH4 values are drawn from. Poorly colocalising tissues MVMR result is penalised against more highly colocalising tissues. 
 
 ### Function to weight betas and run MR 
 ```{r}
@@ -504,6 +498,7 @@ ggplot(mr_weighted[, .(b=mean(b)), by=.(t1,t2,exposure)][, .(b_diff=b[1]-b[2]), 
 
 
 ## All tissue pairs MR (actual PPH4 values)
+Now let's use the real data and do the all GTEx tissue against all other GTEx tissues. The poorly colocalising tissues have lower MVMR estimates against more highly coloclising tissues.
 ```{r}
 #| warning: false
 #| message: false
@@ -538,9 +533,12 @@ ggplot((mr_actual
 
 
 ### MVMR estimates depend on difference in instrument size (which also depends on difference in sample size)
+Plot the different between MVMR estimates from a the 2-exposure MVMR procedure above - i.e. how separated are the effects attributed to each tissue. Is the magnitude of the separation related to the relative number of SNPs in each instrument, and does this depend on the sample size. 
 ```{r}
 #| warning: false
 #| message: false
+t1_highlight <- c("cortex", "frontal_cortex", "hippocampus", "hypothalamus")
+t2_highlight <- c("subcut_adipose")
 ggplot((mr_actual
         [coloc_counts, t1_n := i.mean_sample_n, on=c("t1"="tissue")]
         [coloc_counts, t2_n := i.mean_sample_n, on=c("t2"="tissue")]
@@ -553,6 +551,7 @@ ggplot((mr_actual
   geom_hline(yintercept = 0.0, linetype="dotted", color="grey") +
   geom_vline(xintercept = 0.0, linetype="dotted", color="grey") +
   geom_point(alpha=0.3) +
+  geom_label_repel(data = unique(mr_actual[t1 %in% t1_highlight & t2 %in% t2_highlight][, lab := paste0(t1,"/",t2)], by="lab"), aes(label=lab), max.overlaps=Inf, nudge_y=0.5, color="black") +
   scale_color_viridis_c(option="magma") +
   geom_smooth(method="lm", se=FALSE, color="red") +
   theme_classic2() +
@@ -563,5 +562,49 @@ ggplot((mr_actual
 ```
 
 
-## Interpretation
-Is the MVMR estimate mostly related to the difference in the relative number of colocalising SNPs in tissue A vs. tissue B? The tissue with fewer colocalising SNPs will liekly be overpowered in the MVMR by the tissue with a greater number of colocalising SNPs. Yet, the number of colocalising SNPs is closely related to the sample size of the eQTL dataset. 
+## Interpretation so far
+Is the MVMR estimate mostly related to the difference in the relative number of colocalising SNPs in tissue A vs. tissue B? The tissue with fewer colocalising SNPs may be overpowered in the MVMR by the tissue with a greater number of colocalising SNPs, since number of colocalising SNPs is related to sample size of the eQTL dataset, is the MVMR estimate just a function of sample size? We not clearly, as despite the trend there are numerous tissues which show the reverse pattern - e.g. brain tissues where the sample size and number of colocalising loci is actually less than for subcutaneous adipose tissue, yet the MVMR result yeilds a larger contribution from the brain tissue instrument (i.e. the points live in the North-West quantrant of the plot above). Let's look at why this happens. 
+
+## Brain vs adipose tissue 
+Lets break down the characteristics of the brain and adipose tissue-partitioned BMI instruments. 
+
+TBC
+
+<!-- ### Number of colocalising loci -->
+<!-- ```{r} -->
+<!-- ggplot((coloc_counts -->
+<!--         [tissue %in% c(t1_highlight, t2_highlight)] -->
+<!--         [, tissue_class := ifelse(tissue %in% t1_highlight, "Brain", "Adipose")] -->
+<!--         ), aes(x = tissue, y = `num_coloc_pph4`, fill = tissue_class)) + -->
+<!--   theme_classic2() + -->
+<!--   geom_col(alpha = 0.5) + -->
+<!--   labs(subtitle = paste("coloc thresh:", coloc_thresh),  -->
+<!--        y = "Number of colocalising BMI variants") + -->
+<!--   theme(axis.title.x = element_blank(),  -->
+<!--         axis.text.x = element_text(angle=45, hjust=1)) + -->
+<!--   guides(fill = "none") + -->
+<!--   facet_wrap(~tissue_class, scales = "free_x") -->
+<!-- ``` -->
+
+<!-- ### Distribution of PPH4 -->
+<!-- ```{r} -->
+<!-- brain_adip_coloc <- coloc_results[locus_trait=="bmi" & trait.x=="bmi" & (trait.y %in% c(t1_highlight,t2_highlight)) & grepl("protein_coding", gene_type.y), .SD[which.max(pph4)], by=.(locus_index_rsid,trait.y)] -->
+<!-- bmi_gwas_data <- as.data.table(h_mvmr)[, chr:= as.integer(chr)] -->
+<!-- brain_adip_coloc[bmi_gwas_data, `:=`(bmi_beta = i.bx, weighted_bmi_beta = pph4*i.bx), on=.(chr,bp)] -->
+
+<!-- ggplot(brain_adip_coloc, aes(x=pph4, color=trait.y)) + -->
+<!--   theme_classic() + -->
+<!--   geom_density() + -->
+<!--   labs(y = "Density", x = "PPH4", color="Tissue") -->
+<!-- ``` -->
+
+<!-- ### Distribution of weighted BMI betas (all) -->
+<!-- ```{r} -->
+<!-- ggplot(brain_adip_coloc[, locus_index_rsid:=factor(locus_index_rsid, levels=unique(locus_index_rsid[order(-weighted_bmi_beta)]))],  -->
+<!--        aes(x=locus_index_rsid, y=trait.y, fill=weighted_bmi_beta)) + -->
+<!--   theme_classic2() + -->
+<!--   geom_tile() + -->
+<!--   scale_fill_viridis_c() + -->
+<!--   labs(y = "Density", x = "Weighted BMI beta", color="Tissue") -->
+<!-- ``` -->
+

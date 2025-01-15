@@ -599,6 +599,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="run-the-mr" class="level2">
 <h2 class="anchored" data-anchor-id="run-the-mr">Run the MR</h2>
+<p>This is just the plain MR of BMI on HF.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">run_mr</span>(h)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(res, <span class="at">caption =</span> <span class="st">"BMI:HF Mendelian randomisation"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -747,6 +748,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="plot-mr" class="level2">
 <h2 class="anchored" data-anchor-id="plot-mr">Plot MR</h2>
+<p>Plot MR result of BMI on HF.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_mr</span>(h, res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -760,7 +762,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="select-variants---mr-with-a-subset-of-bmi-variants" class="level2">
 <h2 class="anchored" data-anchor-id="select-variants---mr-with-a-subset-of-bmi-variants">Select variants - MR with a subset of BMI variants</h2>
-<p>In the Leyden et al.&nbsp;2022 paper 86 variant colocalise with adipose tissue eQTLs and 140 colocalise with brain tissue eQTLs. There is overlap between the two tissues of 43 variants.</p>
+<p>In the Leyden et al.&nbsp;2022 paper 86 variant colocalise with adipose tissue eQTLs and 140 colocalise with brain tissue eQTLs. There is overlap between the two tissues of 43 variants. Let’s run the run of BMI on HF just using these variants - just looks like a similar version of the previous plot but with fewer points.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>tissue1_varid <span class="ot">&lt;-</span> <span class="fu">sample</span>(h<span class="sc">@</span>snps, <span class="dv">140</span>)</span>
@@ -926,6 +928,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="run-multivariable-mr-unweighted" class="level2">
 <h2 class="anchored" data-anchor-id="run-multivariable-mr-unweighted">Run multivariable MR (unweighted)</h2>
+<p>Now lets turn this into a multivariable MR situation, with BMI variants for tissues one and BMI variants for tissue 2, against HF. The results are the same, as expected, because there is no differential weighting of the betas, effectively they are just the same instrument. So far nothing new.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># copy of BMI for tissue 1</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>bmi_t1 <span class="ot">&lt;-</span> bmi</span>
@@ -1054,8 +1057,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="eqtl-colocalising-bmi-variants" class="level2">
 <h2 class="anchored" data-anchor-id="eqtl-colocalising-bmi-variants">eQTL colocalising BMI variants</h2>
+<p>To separate the BMI instruments for different tissues we need to ‘change’ them somehow, in a biologically informed way. Hence weighting the betas by the best colocalisation results at each locus.</p>
 <section id="number-of-colocalising-variants-per-tissue" class="level3">
 <h3 class="anchored" data-anchor-id="number-of-colocalising-variants-per-tissue">Number of colocalising variants per tissue</h3>
+<p>Let’s first look at how many BMI variants colocalise with eQTLs from the GTEx version 10 tissues. There is quite a spread.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>coloc_thresh <span class="ot">&lt;-</span> <span class="fl">0.8</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1088,9 +1093,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="determinants-of-colocalisation-number" class="level3">
 <h3 class="anchored" data-anchor-id="determinants-of-colocalisation-number">Determinants of colocalisation number</h3>
-<p>Does this depend on eqtl sample size????</p>
+<p>Does the number of colocalising variants, and/or the mean PPH4 value (across all BMI variants) for each tissue, depend on eQTL sample size? Yes, this appears to be important.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(coloc_counts, <span class="fu">aes</span>(<span class="at">y =</span> mean_sample_n, <span class="at">x =</span> num_coloc_pph4, <span class="at">color =</span> mean_pph4, <span class="at">size =</span> num_coloc_genes)) <span class="sc">+</span></span>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(coloc_counts, <span class="fu">aes</span>(<span class="at">x =</span> mean_sample_n, <span class="at">y =</span> num_coloc_pph4, <span class="at">color =</span> mean_pph4, <span class="at">size =</span> num_coloc_genes)) <span class="sc">+</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text_repel</span>(<span class="fu">aes</span>(<span class="at">label =</span> tissue), <span class="at">size =</span> <span class="dv">2</span>, <span class="at">color=</span><span class="st">"black"</span>, <span class="at">max.overlaps =</span> <span class="cn">Inf</span>) <span class="sc">+</span></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">option=</span><span class="st">"mako"</span>) <span class="sc">+</span></span>
@@ -1111,7 +1116,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="effect-of-number-of-colocalising-loci-on-mvmr-result---1" class="level3">
 <h3 class="anchored" data-anchor-id="effect-of-number-of-colocalising-loci-on-mvmr-result---1">Effect of number of colocalising loci on MVMR result - 1</h3>
-<p>Simple analysis: hold constant the number of colocalising variants in tissue 1 (set to median: 73) and hold the PPH4 weighting for colocalising variants at <code>0.9</code> and the for the non-colocalising variants at <code>0.2</code>.</p>
+<p>Simple simulation - hows does the number of variants used as an instrument effect the MVMR result. Let’s hold constant the number of colocalising variants in tissue 1 (set to median: 76) and then vary the number of variants in tissue 2. For now, let’s hold the PPH4 weighting for colocalising variants at constant <code>0.9</code> and the for the non-colocalising tissue variants something low, like <code>0.2</code>. We see that the MVMR estimate flips when the second tissue has more variants than the first. The tissue with higher numbers of variants has the large MVMR estimate.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>num_loci <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">num_t1  =</span> <span class="fu">round</span>(<span class="fu">median</span>(coloc_counts<span class="sc">$</span>num_coloc_pph4)), </span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">num_t2  =</span> <span class="fu">seq</span>(<span class="fu">min</span>(coloc_counts<span class="sc">$</span>num_coloc_pph4), <span class="fu">max</span>(coloc_counts<span class="sc">$</span>num_coloc_pph4)),</span>
@@ -1160,7 +1165,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="effect-of-number-of-colocalising-loci-on-mvmr-result---2" class="level3">
 <h3 class="anchored" data-anchor-id="effect-of-number-of-colocalising-loci-on-mvmr-result---2">Effect of number of colocalising loci on MVMR result - 2</h3>
-<p>Now do the same but vary both the number of colocalising variants in tissue 1 and 2 (grid search).</p>
+<p>Now do the same but vary both the number of colocalising variants in tissue 1 and 2, and the percentage overlap of the instruments (grid search). We see that there has to be some difference in the number of colocalising loci and there needs to be some overlap of the loci in order to separate the MVMR results for each tissue.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>num_loci <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">num_t1  =</span> <span class="fu">seq</span>(<span class="fu">min</span>(coloc_counts<span class="sc">$</span>num_coloc_pph4), <span class="fu">max</span>(coloc_counts<span class="sc">$</span>num_coloc_pph4), <span class="dv">50</span>), </span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">num_t2  =</span> <span class="fu">seq</span>(<span class="fu">min</span>(coloc_counts<span class="sc">$</span>num_coloc_pph4), <span class="fu">max</span>(coloc_counts<span class="sc">$</span>num_coloc_pph4), <span class="dv">50</span>),</span>
@@ -1217,30 +1222,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a><span class="co"># ggplot(mr_num_loci, aes(x=as.factor(num_diff), y=b, fill=exposure, color=num_t1)) +</span></span>
-<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a><span class="co">#   geom_hline(yintercept = 0.0, linetype="dashed", color="darkgray") +</span></span>
-<span id="cb14-58"><a href="#cb14-58" aria-hidden="true" tabindex="-1"></a><span class="co">#   geom_violin(width=1, position= position_dodge(width = 0.5), color=NA) +</span></span>
-<span id="cb14-59"><a href="#cb14-59" aria-hidden="true" tabindex="-1"></a><span class="co">#   theme_classic() +</span></span>
-<span id="cb14-60"><a href="#cb14-60" aria-hidden="true" tabindex="-1"></a><span class="co">#   labs(x = "Difference in instrument size (num SNPs, T1-T2)", </span></span>
-<span id="cb14-61"><a href="#cb14-61" aria-hidden="true" tabindex="-1"></a><span class="co">#        y = "MVMR estimate", </span></span>
-<span id="cb14-62"><a href="#cb14-62" aria-hidden="true" tabindex="-1"></a><span class="co">#        fill = "Tissue") +</span></span>
-<span id="cb14-63"><a href="#cb14-63" aria-hidden="true" tabindex="-1"></a><span class="co">#   facet_wrap(~overlap, </span></span>
-<span id="cb14-64"><a href="#cb14-64" aria-hidden="true" tabindex="-1"></a><span class="co">#              labeller = labeller(overlap = function(x) paste0("Loci overlap: ", scales::percent(as.numeric(x)))))</span></span>
-<span id="cb14-65"><a href="#cb14-65" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-66"><a href="#cb14-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-67"><a href="#cb14-67" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mr_num_loci[, <span class="at">num_diff_lab :=</span> <span class="fu">paste0</span>(<span class="st">"Delta~nSNP[T1-T2]:~ "</span>, num_diff)], </span>
-<span id="cb14-68"><a href="#cb14-68" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x=</span><span class="fu">as.factor</span>(overlap), <span class="at">y=</span>b, <span class="at">fill=</span>exposure, <span class="at">color=</span>num_t1)) <span class="sc">+</span></span>
-<span id="cb14-69"><a href="#cb14-69" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"darkgray"</span>) <span class="sc">+</span></span>
-<span id="cb14-70"><a href="#cb14-70" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_violin</span>(<span class="at">width=</span><span class="dv">1</span>, <span class="at">position=</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.5</span>), <span class="at">color=</span><span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb14-71"><a href="#cb14-71" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) scales<span class="sc">::</span><span class="fu">percent</span>(<span class="fu">as.numeric</span>(x))) <span class="sc">+</span></span>
-<span id="cb14-72"><a href="#cb14-72" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
-<span id="cb14-73"><a href="#cb14-73" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
-<span id="cb14-74"><a href="#cb14-74" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Instrument SNP overlap (% of smaller instrument)"</span>, </span>
-<span id="cb14-75"><a href="#cb14-75" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"MVMR estimate"</span>, </span>
-<span id="cb14-76"><a href="#cb14-76" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">"Tissue"</span>) <span class="sc">+</span></span>
-<span id="cb14-77"><a href="#cb14-77" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>num_diff_lab, </span>
-<span id="cb14-78"><a href="#cb14-78" aria-hidden="true" tabindex="-1"></a>             <span class="at">nrow =</span> <span class="dv">1</span>,</span>
-<span id="cb14-79"><a href="#cb14-79" aria-hidden="true" tabindex="-1"></a>             <span class="at">labeller =</span> label_parsed)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mr_num_loci[, <span class="at">num_diff_lab :=</span> <span class="fu">paste0</span>(<span class="st">"Delta~nSNP[T1-T2]:~ "</span>, num_diff)], </span>
+<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x=</span><span class="fu">as.factor</span>(overlap), <span class="at">y=</span>b, <span class="at">fill=</span>exposure, <span class="at">color=</span>num_t1)) <span class="sc">+</span></span>
+<span id="cb14-58"><a href="#cb14-58" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"darkgray"</span>) <span class="sc">+</span></span>
+<span id="cb14-59"><a href="#cb14-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_violin</span>(<span class="at">width=</span><span class="dv">1</span>, <span class="at">position=</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.5</span>), <span class="at">color=</span><span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb14-60"><a href="#cb14-60" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) scales<span class="sc">::</span><span class="fu">percent</span>(<span class="fu">as.numeric</span>(x))) <span class="sc">+</span></span>
+<span id="cb14-61"><a href="#cb14-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb14-62"><a href="#cb14-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
+<span id="cb14-63"><a href="#cb14-63" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Instrument SNP overlap (% of smaller instrument)"</span>, </span>
+<span id="cb14-64"><a href="#cb14-64" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"MVMR estimate"</span>, </span>
+<span id="cb14-65"><a href="#cb14-65" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">"Tissue"</span>) <span class="sc">+</span></span>
+<span id="cb14-66"><a href="#cb14-66" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>num_diff_lab, </span>
+<span id="cb14-67"><a href="#cb14-67" aria-hidden="true" tabindex="-1"></a>             <span class="at">nrow =</span> <span class="dv">1</span>,</span>
+<span id="cb14-68"><a href="#cb14-68" aria-hidden="true" tabindex="-1"></a>             <span class="at">labeller =</span> label_parsed)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1257,7 +1251,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>num_tissues <span class="ot">&lt;-</span> <span class="dv">6</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>tissues_subset <span class="ot">&lt;-</span> <span class="fu">levels</span>(coloc_counts<span class="sc">$</span>tissue)[<span class="fu">as.integer</span>(<span class="fu">seq</span>(<span class="dv">1</span>, <span class="fu">length</span>(<span class="fu">levels</span>(coloc_counts<span class="sc">$</span>tissue)), <span class="at">length.out=</span>num_tissues))] </span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>coloc_subset <span class="ot">&lt;-</span> coloc_results[locus_trait<span class="sc">==</span><span class="st">"bmi"</span> <span class="sc">&amp;</span> trait.x<span class="sc">==</span><span class="st">"bmi"</span> <span class="sc">&amp;</span> (trait.y <span class="sc">%in%</span> tissues_subset), .SD[<span class="fu">which.max</span>(pph4)], by<span class="ot">=</span>.(locus_index_rsid,trait.y)]</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>coloc_subset <span class="ot">&lt;-</span> coloc_results[locus_trait<span class="sc">==</span><span class="st">"bmi"</span> <span class="sc">&amp;</span> trait.x<span class="sc">==</span><span class="st">"bmi"</span> <span class="sc">&amp;</span> (trait.y <span class="sc">%in%</span> tissues_subset) <span class="sc">&amp;</span> <span class="fu">grepl</span>(<span class="st">"protein_coding"</span>, gene_type.y), .SD[<span class="fu">which.max</span>(pph4)], by<span class="ot">=</span>.(locus_index_rsid,trait.y)]</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>density <span class="ot">&lt;-</span> coloc_subset[, {</span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  den <span class="ot">&lt;-</span> <span class="fu">density</span>(pph4, <span class="at">n=</span><span class="dv">1000</span>)</span>
@@ -1360,7 +1354,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="ivw-regression-by-different-pph4-weighting-distributions" class="level2">
 <h2 class="anchored" data-anchor-id="ivw-regression-by-different-pph4-weighting-distributions">IVW regression by different PPH4 weighting distributions</h2>
-<p>Perform MVMR with the weighted BMI instruments. Lets look at holding a poorly colocalising tissue constant compared to the best colocalising tissues.</p>
+<p>Perform MVMR with the weighted BMI instruments. Lets look at varying the distributions that the PPH4 values are drawn from. Poorly colocalising tissues MVMR result is penalised against more highly colocalising tissues.</p>
 <section id="function-to-weight-betas-and-run-mr" class="level3">
 <h3 class="anchored" data-anchor-id="function-to-weight-betas-and-run-mr">Function to weight betas and run MR</h3>
 <div class="cell">
@@ -1492,6 +1486,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="all-tissue-pairs-mr-actual-pph4-values" class="level2">
 <h2 class="anchored" data-anchor-id="all-tissue-pairs-mr-actual-pph4-values">All tissue pairs MR (actual PPH4 values)</h2>
+<p>Now let’s use the real data and do the all GTEx tissue against all other GTEx tissues. The poorly colocalising tissues have lower MVMR estimates against more highly coloclising tissues.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>tissue_pph4_vals <span class="ot">&lt;-</span> coloc_results[locus_trait<span class="sc">==</span><span class="st">"bmi"</span> <span class="sc">&amp;</span> </span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                                    trait.x<span class="sc">==</span><span class="st">"bmi"</span> <span class="sc">&amp;</span> </span>
@@ -1530,26 +1525,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <section id="mvmr-estimates-depend-on-difference-in-instrument-size-which-also-depends-on-difference-in-sample-size" class="level3">
 <h3 class="anchored" data-anchor-id="mvmr-estimates-depend-on-difference-in-instrument-size-which-also-depends-on-difference-in-sample-size">MVMR estimates depend on difference in instrument size (which also depends on difference in sample size)</h3>
+<p>Plot the different between MVMR estimates from a the 2-exposure MVMR procedure above - i.e.&nbsp;how separated are the effects attributed to each tissue. Is the magnitude of the separation related to the relative number of SNPs in each instrument, and does this depend on the sample size.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>((mr_actual</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>        [coloc_counts, <span class="at">t1_n :=</span> i.mean_sample_n, <span class="at">on=</span><span class="fu">c</span>(<span class="st">"t1"</span><span class="ot">=</span><span class="st">"tissue"</span>)]</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        [coloc_counts, <span class="at">t2_n :=</span> i.mean_sample_n, <span class="at">on=</span><span class="fu">c</span>(<span class="st">"t2"</span><span class="ot">=</span><span class="st">"tissue"</span>)]</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        [, <span class="st">`</span><span class="at">:=</span><span class="st">`</span>(<span class="at">b_diff     =</span> b[exposure<span class="sc">==</span><span class="st">"Tissue 1"</span>]<span class="sc">-</span>b[exposure<span class="sc">==</span><span class="st">"Tissue 2"</span>],</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">snp_diff   =</span> n_sig_snps[exposure<span class="sc">==</span><span class="st">"Tissue 1"</span>]<span class="sc">-</span>n_sig_snps[exposure<span class="sc">==</span><span class="st">"Tissue 2"</span>],</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">pph4_diff  =</span> mean_pph4_t1<span class="sc">-</span>mean_pph4_t2, </span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">nsamp_diff =</span> t1_n <span class="sc">-</span> t2_n), <span class="at">by=</span>.(t1,t2)]</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>       ),</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">y=</span>b_diff, <span class="at">x=</span>snp_diff, <span class="at">color=</span>nsamp_diff)) <span class="sc">+</span></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.0</span>, <span class="at">linetype=</span><span class="st">"dotted"</span>, <span class="at">color=</span><span class="st">"grey"</span>) <span class="sc">+</span></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fl">0.0</span>, <span class="at">linetype=</span><span class="st">"dotted"</span>, <span class="at">color=</span><span class="st">"grey"</span>) <span class="sc">+</span></span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span><span class="fl">0.3</span>) <span class="sc">+</span></span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">option=</span><span class="st">"magma"</span>) <span class="sc">+</span></span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method=</span><span class="st">"lm"</span>, <span class="at">se=</span><span class="cn">FALSE</span>, <span class="at">color=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic2</span>() <span class="sc">+</span></span>
-<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
-<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="fu">expression</span>(Delta[T1<span class="sc">-</span>T2]<span class="sc">~</span>MVMR<span class="sc">~</span>estimate), </span>
-<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="fu">expression</span>(Delta[T1<span class="sc">-</span>T2]<span class="sc">~</span>No.<span class="sc">~</span>coloc<span class="sc">~</span>SNPs), </span>
-<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="fu">expression</span>(Delta[T1<span class="sc">-</span>T2]<span class="sc">~</span>Tissue<span class="sc">~</span>sample<span class="sc">~</span>size))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>t1_highlight <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"cortex"</span>, <span class="st">"frontal_cortex"</span>, <span class="st">"hippocampus"</span>, <span class="st">"hypothalamus"</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>t2_highlight <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"subcut_adipose"</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>((mr_actual</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        [coloc_counts, <span class="at">t1_n :=</span> i.mean_sample_n, <span class="at">on=</span><span class="fu">c</span>(<span class="st">"t1"</span><span class="ot">=</span><span class="st">"tissue"</span>)]</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>        [coloc_counts, <span class="at">t2_n :=</span> i.mean_sample_n, <span class="at">on=</span><span class="fu">c</span>(<span class="st">"t2"</span><span class="ot">=</span><span class="st">"tissue"</span>)]</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>        [, <span class="st">`</span><span class="at">:=</span><span class="st">`</span>(<span class="at">b_diff     =</span> b[exposure<span class="sc">==</span><span class="st">"Tissue 1"</span>]<span class="sc">-</span>b[exposure<span class="sc">==</span><span class="st">"Tissue 2"</span>],</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">snp_diff   =</span> n_sig_snps[exposure<span class="sc">==</span><span class="st">"Tissue 1"</span>]<span class="sc">-</span>n_sig_snps[exposure<span class="sc">==</span><span class="st">"Tissue 2"</span>],</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">pph4_diff  =</span> mean_pph4_t1<span class="sc">-</span>mean_pph4_t2, </span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">nsamp_diff =</span> t1_n <span class="sc">-</span> t2_n), <span class="at">by=</span>.(t1,t2)]</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>       ),</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">y=</span>b_diff, <span class="at">x=</span>snp_diff, <span class="at">color=</span>nsamp_diff)) <span class="sc">+</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.0</span>, <span class="at">linetype=</span><span class="st">"dotted"</span>, <span class="at">color=</span><span class="st">"grey"</span>) <span class="sc">+</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fl">0.0</span>, <span class="at">linetype=</span><span class="st">"dotted"</span>, <span class="at">color=</span><span class="st">"grey"</span>) <span class="sc">+</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span><span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_label_repel</span>(<span class="at">data =</span> <span class="fu">unique</span>(mr_actual[t1 <span class="sc">%in%</span> t1_highlight <span class="sc">&amp;</span> t2 <span class="sc">%in%</span> t2_highlight][, <span class="at">lab :=</span> <span class="fu">paste0</span>(t1,<span class="st">"/"</span>,t2)], <span class="at">by=</span><span class="st">"lab"</span>), <span class="fu">aes</span>(<span class="at">label=</span>lab), <span class="at">max.overlaps=</span><span class="cn">Inf</span>, <span class="at">nudge_y=</span><span class="fl">0.5</span>, <span class="at">color=</span><span class="st">"black"</span>) <span class="sc">+</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">option=</span><span class="st">"magma"</span>) <span class="sc">+</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method=</span><span class="st">"lm"</span>, <span class="at">se=</span><span class="cn">FALSE</span>, <span class="at">color=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic2</span>() <span class="sc">+</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="fu">expression</span>(Delta[T1<span class="sc">-</span>T2]<span class="sc">~</span>MVMR<span class="sc">~</span>estimate), </span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="fu">expression</span>(Delta[T1<span class="sc">-</span>T2]<span class="sc">~</span>No.<span class="sc">~</span>coloc<span class="sc">~</span>SNPs), </span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="fu">expression</span>(Delta[T1<span class="sc">-</span>T2]<span class="sc">~</span>Tissue<span class="sc">~</span>sample<span class="sc">~</span>size))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1560,11 +1559,77 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 </section>
-<section id="interpretation" class="level2">
-<h2 class="anchored" data-anchor-id="interpretation">Interpretation</h2>
-<p>Is the MVMR estimate mostly related to the difference in the relative number of colocalising SNPs in tissue A vs.&nbsp;tissue B? The tissue with fewer colocalising SNPs will liekly be overpowered in the MVMR by the tissue with a greater number of colocalising SNPs. Yet, the number of colocalising SNPs is closely related to the sample size of the eQTL dataset.</p>
+<section id="interpretation-so-far" class="level2">
+<h2 class="anchored" data-anchor-id="interpretation-so-far">Interpretation so far</h2>
+<p>Is the MVMR estimate mostly related to the difference in the relative number of colocalising SNPs in tissue A vs.&nbsp;tissue B? The tissue with fewer colocalising SNPs may be overpowered in the MVMR by the tissue with a greater number of colocalising SNPs, since number of colocalising SNPs is related to sample size of the eQTL dataset, is the MVMR estimate just a function of sample size? We not clearly, as despite the trend there are numerous tissues which show the reverse pattern - e.g.&nbsp;brain tissues where the sample size and number of colocalising loci is actually less than for subcutaneous adipose tissue, yet the MVMR result yeilds a larger contribution from the brain tissue instrument (i.e.&nbsp;the points live in the North-West quantrant of the plot above). Let’s look at why this happens.</p>
+</section>
+<section id="brain-vs-adipose-tissue" class="level2">
+<h2 class="anchored" data-anchor-id="brain-vs-adipose-tissue">Brain vs adipose tissue</h2>
+<p>Lets break down the characteristics of the brain and adipose tissue-partitioned BMI instruments.</p>
+<section id="number-of-colocalising-loci" class="level3">
+<h3 class="anchored" data-anchor-id="number-of-colocalising-loci">Number of colocalising loci</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>((coloc_counts</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>        [tissue <span class="sc">%in%</span> <span class="fu">c</span>(t1_highlight, t2_highlight)]</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>        [, <span class="at">tissue_class :=</span> <span class="fu">ifelse</span>(tissue <span class="sc">%in%</span> t1_highlight, <span class="st">"Brain"</span>, <span class="st">"Adipose"</span>)]</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        ), <span class="fu">aes</span>(<span class="at">x =</span> tissue, <span class="at">y =</span> <span class="st">`</span><span class="at">num_coloc_pph4</span><span class="st">`</span>, <span class="at">fill =</span> tissue_class)) <span class="sc">+</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic2</span>() <span class="sc">+</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">subtitle =</span> <span class="fu">paste</span>(<span class="st">"coloc thresh:"</span>, coloc_thresh), </span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Number of colocalising BMI variants"</span>) <span class="sc">+</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.title.x =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle=</span><span class="dv">45</span>, <span class="at">hjust=</span><span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">fill =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>tissue_class, <span class="at">scales =</span> <span class="st">"free_x"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="distribution-of-pph4" class="level3">
+<h3 class="anchored" data-anchor-id="distribution-of-pph4">Distribution of PPH4</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>brain_adip_coloc <span class="ot">&lt;-</span> coloc_results[locus_trait<span class="sc">==</span><span class="st">"bmi"</span> <span class="sc">&amp;</span> trait.x<span class="sc">==</span><span class="st">"bmi"</span> <span class="sc">&amp;</span> (trait.y <span class="sc">%in%</span> <span class="fu">c</span>(t1_highlight,t2_highlight)) <span class="sc">&amp;</span> <span class="fu">grepl</span>(<span class="st">"protein_coding"</span>, gene_type.y), .SD[<span class="fu">which.max</span>(pph4)], by<span class="ot">=</span>.(locus_index_rsid,trait.y)]</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>bmi_gwas_data <span class="ot">&lt;-</span> <span class="fu">as.data.table</span>(h_mvmr)[, chr<span class="sc">:</span><span class="er">=</span> <span class="fu">as.integer</span>(chr)]</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>brain_adip_coloc[bmi_gwas_data, <span class="st">`</span><span class="at">:=</span><span class="st">`</span>(<span class="at">bmi_beta =</span> i.bx, <span class="at">weighted_bmi_beta =</span> pph4<span class="sc">*</span>i.bx), on<span class="ot">=</span>.(chr,bp)]</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(brain_adip_coloc, <span class="fu">aes</span>(<span class="at">x=</span>pph4, <span class="at">color=</span>trait.y)) <span class="sc">+</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>() <span class="sc">+</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Density"</span>, <span class="at">x =</span> <span class="st">"PPH4"</span>, <span class="at">color=</span><span class="st">"Tissue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="distribution-of-weighted-bmi-betas-all" class="level3">
+<h3 class="anchored" data-anchor-id="distribution-of-weighted-bmi-betas-all">Distribution of weighted BMI betas (all)</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(brain_adip_coloc[, <span class="at">locus_index_rsid:=</span><span class="fu">factor</span>(locus_index_rsid, <span class="at">levels=</span><span class="fu">unique</span>(locus_index_rsid[<span class="fu">order</span>(<span class="sc">-</span>weighted_bmi_beta)]))], </span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x=</span>locus_index_rsid, <span class="at">y=</span>trait.y, <span class="at">fill=</span>weighted_bmi_beta)) <span class="sc">+</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic2</span>() <span class="sc">+</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_tile</span>() <span class="sc">+</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_c</span>() <span class="sc">+</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Density"</span>, <span class="at">x =</span> <span class="st">"Weighted BMI beta"</span>, <span class="at">color=</span><span class="st">"Tissue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
